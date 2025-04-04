@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 
 /**
@@ -11,8 +9,17 @@ import java.net.Socket;
 public class TaskHandler implements Runnable{
     private final Socket socket;
     private BufferedReader requestReader;
+    private BufferedInputStream reader;
+    private DataInputStream dataInputStream;
+
     TaskHandler(Socket socket){
         this.socket=socket;
+        try {
+            reader=new BufferedInputStream(socket.getInputStream());
+            dataInputStream=new DataInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -25,15 +32,16 @@ public class TaskHandler implements Runnable{
         Handler handler=null;
         if(request.getRequestType().equalsIgnoreCase(ClientRequest.UPLOAD)) {
             System.out.println("File is being transferred"); //debug.
-            handler = new UploadHandler(socket);
+            handler = new UploadHandler(dataInputStream,reader);
         }
         else ;
 
-        handler.receiveRequest(request.getFileName());
-
+        while(socket.isConnected()) handler.receiveRequest(request.getFileName());
         // after handling all tasks.
         try {
             requestReader.close();
+            dataInputStream.close();
+            reader.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

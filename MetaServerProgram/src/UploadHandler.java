@@ -6,14 +6,15 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class UploadHandler implements Handler{
-    private final Socket socket;
-    private String os;
+    private final String os;
+    private final DataInputStream dataInputStream;
+    private final BufferedInputStream reader;
 
-    UploadHandler(Socket socket){
-        this.socket=socket;
-        this.os=System.getProperty("os.name").toUpperCase();
+    UploadHandler(DataInputStream dataInputStream, BufferedInputStream reader) {
+        this.os = System.getProperty("os.name").toUpperCase();
+        this.dataInputStream = dataInputStream;
+        this.reader = reader;
     }
-
 
     /**
      * There are two paths to this function either write the file first and delete after transferring.
@@ -45,11 +46,9 @@ public class UploadHandler implements Handler{
             }
 
             // Retrieve file size for error detection.
-            DataInputStream dataInputStream=new DataInputStream(socket.getInputStream());
             long fileSize=dataInputStream.readLong();
 
             // Retrieve file.
-            BufferedInputStream reader=new BufferedInputStream(socket.getInputStream()); // read from socket
             FileOutputStream fileWriter=new FileOutputStream(path); // write into file.
             byte[] chunk=new byte[128*1024*1024];
             int bytesRead,totalBytes=0;
@@ -64,11 +63,7 @@ public class UploadHandler implements Handler{
                 // handle error
                 System.out.println("File not received properly because totalBytes="+totalBytes+" and fileSize="+fileSize);
             }
-
-            dataInputStream.close();
             fileWriter.close();
-            reader.close();
-
             System.out.println("File Received Successfully!!!!"); //debug
         } catch (IOException e) {
             // handle error

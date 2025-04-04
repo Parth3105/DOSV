@@ -10,20 +10,22 @@ import java.net.SocketException;
  */
 
 class UploadHandler implements RequestHandler {
-    private final Socket socket;
     private String os;
     private final int BUFFER_SIZE = 128 * 1024 * 1024;
+    private final PrintWriter printWriter;
+    private final DataOutputStream dataOutputStream;
+    private final BufferedOutputStream transfer;
 
-    UploadHandler(Socket socket) {
+
+    UploadHandler(PrintWriter printWriter, DataOutputStream dataOutputStream, BufferedOutputStream transfer) {
         this.os = System.getProperty("os.name").toUpperCase();
-        this.socket = socket;
+        this.printWriter=printWriter;
+        this.dataOutputStream=dataOutputStream;
+        this.transfer=transfer;
     }
 
     @Override
     public synchronized void sendRequest(String path) {
-        PrintWriter printWriter = null;
-        DataOutputStream dataOutputStream = null;
-        BufferedOutputStream transfer = null;
         FileInputStream fileReader = null;
         
         try {
@@ -46,21 +48,18 @@ class UploadHandler implements RequestHandler {
             System.out.println("Preparing to upload: " + fileName + " (" + fileSize + " bytes)");
 
             // Send write-request and filename
-            printWriter = new PrintWriter(socket.getOutputStream());
             printWriter.println("WRITE");
             printWriter.flush();
             printWriter.println(fileName);
             printWriter.flush();
 
             // Send file size
-            dataOutputStream = new DataOutputStream(socket.getOutputStream());
             dataOutputStream.writeLong(fileSize);
             dataOutputStream.flush();
 
             // Send the file in byte-stream
             fileReader = new FileInputStream(file);
             byte[] chunk = new byte[BUFFER_SIZE];
-            transfer = new BufferedOutputStream(socket.getOutputStream());
             int bytesRead;
             long totalBytesSent = 0;
             int progressMarker = 0;
@@ -78,6 +77,7 @@ class UploadHandler implements RequestHandler {
                     System.out.println("Upload progress: " + progress + "%");
                 }
             }
+            fileReader.close();
 
             System.out.println("Upload completed: " + fileName + " (" + totalBytesSent + "/" + fileSize + " bytes)");
 
@@ -85,18 +85,9 @@ class UploadHandler implements RequestHandler {
             System.err.println("Error: File not found or cannot be accessed.");
         } catch (SocketException se) {
             System.err.println("Error: Connection to server lost during upload.");
+            se.printStackTrace();
         } catch (IOException e) {
             System.err.println("Error: Failed to upload file.");
-        } finally {
-            try {
-                // Close resources in reverse order of creation
-                if (fileReader != null) fileReader.close();
-                if (transfer != null) transfer.close();
-                if (dataOutputStream != null) dataOutputStream.close();
-                if (printWriter != null) printWriter.close();
-            } catch (IOException e) {
-                System.err.println("Error closing resources: " + e.getMessage());
-            }
         }
     }
 

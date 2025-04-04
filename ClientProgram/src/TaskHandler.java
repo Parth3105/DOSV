@@ -1,4 +1,4 @@
-import java.io.File;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -14,12 +14,18 @@ import java.net.SocketException;
 class TaskHandler implements Runnable {
     private final Socket socket;
     private String request;
-    
-    TaskHandler(Socket socket, String request) {
+    private final PrintWriter printWriter;
+    private final DataOutputStream dataOutputStream;
+    private final BufferedOutputStream transfer;
+
+    TaskHandler(Socket socket, String request, PrintWriter printWriter, DataOutputStream dataOutputStream, BufferedOutputStream transfer) {
         this.request = request;
         this.socket = socket;
+        this.printWriter = printWriter;
+        this.dataOutputStream = dataOutputStream;
+        this.transfer = transfer;
     }
-    
+
     public void run() {
         try {
             String[] parts = request.split(" ", 2);
@@ -27,8 +33,15 @@ class TaskHandler implements Runnable {
                 System.err.println("Error: Invalid command format. Use 'COMMAND PATH'");
                 return;
             }
-            
+
             String requestType = parts[0];
+            if (requestType.equalsIgnoreCase("STOP")) {
+                printWriter.close();
+                dataOutputStream.close();
+                transfer.close();
+                return;
+            }
+
             String path = parts[1];
 
             // Check validity of the file if it's an upload request
@@ -42,17 +55,19 @@ class TaskHandler implements Runnable {
                 System.err.println("Supported commands are: GET, UPLOAD");
                 return;
             }
-            
+
             task.sendRequest(path);
             task.receiveResponse();
-            
+
         } catch (SocketException se) {
             System.err.println("Error: Connection to server lost.");
+            se.printStackTrace();
         } catch (Exception e) {
             System.err.println("Error executing task: " + e.getMessage());
+            e.printStackTrace();
         }
     }
-    
+
     private void validateUploadFile(String path) throws Exception {
         File file = new File(path);
         if (!file.exists()) {
@@ -70,12 +85,12 @@ class TaskHandler implements Runnable {
             throw new Exception("Error: File is empty: " + path);
         }
     }
-    
+
     private RequestHandler createRequestHandler(String requestType) {
         if (requestType.equalsIgnoreCase("Upload")) {
-            return new UploadHandler(socket);
+            return new UploadHandler(printWriter, dataOutputStream, transfer);
         } else if (requestType.equalsIgnoreCase("Get")) {
-            return new DownloadHandler(socket);
+//            return new DownloadHandler(socket);
         }
         return null;
     }
