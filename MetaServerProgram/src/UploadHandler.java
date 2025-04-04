@@ -1,5 +1,6 @@
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -21,12 +22,28 @@ public class UploadHandler implements Handler{
      * @param fileName
      */
     @Override
-    public void receiveRequest(String fileName) {
-        String path;
-        if(os.contains("WIN")) path=".\\testFolder\\"+fileName; // os is windows
-        else path=""; // os other than Windows
-
+    public void receiveRequest(String fileName) {    
         try {
+            String path = null;
+            if (os.contains("WIN")) {
+                path = "..\\testFolder\\" + fileName;
+                
+                // Create directory if it doesn't exist
+                File dir = new File("..\\testFolder");
+                if (!dir.exists() && !dir.mkdirs()) {
+                    throw new IOException("Failed to create download directory");
+                }
+            } else {
+                // String homeDir = System.getProperty("user.home");
+                // downloadPath = homeDir + "/Downloads/" + fileName;
+                
+                // // Create directory if it doesn't exist
+                // File downloadDir = new File(homeDir + "/Downloads");
+                // if (!downloadDir.exists() && !downloadDir.mkdirs()) {
+                //     throw new IOException("Failed to create download directory");
+                // }
+            }
+
             // Retrieve file size for error detection.
             DataInputStream dataInputStream=new DataInputStream(socket.getInputStream());
             long fileSize=dataInputStream.readLong();
@@ -34,7 +51,7 @@ public class UploadHandler implements Handler{
             // Retrieve file.
             BufferedInputStream reader=new BufferedInputStream(socket.getInputStream()); // read from socket
             FileOutputStream fileWriter=new FileOutputStream(path); // write into file.
-            byte[] chunk=new byte[4*1024];
+            byte[] chunk=new byte[128*1024*1024];
             int bytesRead,totalBytes=0;
             while((bytesRead=reader.read(chunk))!=-1){
                 fileWriter.write(chunk,0,bytesRead);
