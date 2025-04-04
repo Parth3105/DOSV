@@ -23,7 +23,7 @@ public class UploadHandler implements Handler{
     @Override
     public void receiveRequest(String fileName) {
         String path;
-        if(os.contains("WIN")) path=".\\"+fileName; // os is windows
+        if(os.contains("WIN")) path=".\\testFolder\\"+fileName; // os is windows
         else path=""; // os other than Windows
 
         try {
