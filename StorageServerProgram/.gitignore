@@ -29,5 +29,5 @@ bin/
 .DS_Store
 
 ### Test Folders ###
-./DBFolder
-./testFolder
+DBFolder/
+testFolder/
