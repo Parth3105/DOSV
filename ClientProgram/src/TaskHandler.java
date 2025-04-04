@@ -1,7 +1,9 @@
 import java.io.File;
 import java.net.Socket;
+import java.net.SocketException;
 
 /**
+ * TODO:
  * Scope of improvement:
  * Either remove threads or keep every function synchronized.
  * If we remove threads, there might be need for task queue....
@@ -9,37 +11,72 @@ import java.net.Socket;
  * Introduction of TCP handoff is still left...
  */
 
-class TaskHandler implements Runnable{
+class TaskHandler implements Runnable {
     private final Socket socket;
-    String request;
-    TaskHandler(Socket socket, String request){
-        this.request=request;
-        this.socket=socket;
+    private String request;
+    
+    TaskHandler(Socket socket, String request) {
+        this.request = request;
+        this.socket = socket;
     }
-    public void run(){
-        String requestType=request.split(" ")[0];
-        String path=request.split(" ",2)[1];
-
-        // Check validity of the file
-        File file=new File(path);
-        if(!file.isFile()){
-            // handle error
-
-            try {
-                throw new Exception(path+" is NOT a FILE!!");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+    
+    public void run() {
+        try {
+            String[] parts = request.split(" ", 2);
+            if (parts.length != 2) {
+                System.err.println("Error: Invalid command format. Use 'COMMAND PATH'");
+                return;
             }
-        }
+            
+            String requestType = parts[0];
+            String path = parts[1];
 
-        RequestHandler task=null;
-        if(requestType.equalsIgnoreCase("Upload")) task=new UploadHandler(socket);
-        else if (requestType.equalsIgnoreCase("Get")) task=new DownloadHandler(socket);
-        if(task==null){
-            // handle error
-            return;
+            // Check validity of the file if it's an upload request
+            if (requestType.equalsIgnoreCase("Upload")) {
+                validateUploadFile(path);
+            }
+
+            RequestHandler task = createRequestHandler(requestType);
+            if (task == null) {
+                System.err.println("Error: Unsupported request type '" + requestType + "'");
+                System.err.println("Supported commands are: GET, UPLOAD");
+                return;
+            }
+            
+            task.sendRequest(path);
+            task.receiveResponse();
+            
+        } catch (SocketException se) {
+            System.err.println("Error: Connection to server lost.");
+        } catch (Exception e) {
+            System.err.println("Error executing task: " + e.getMessage());
         }
-        task.sendRequest(path);
-        task.receiveResponse();
+    }
+    
+    private void validateUploadFile(String path) throws Exception {
+        File file = new File(path);
+        if (!file.exists()) {
+            throw new Exception("Error: File not found: " + path);
+        }
+        if (!file.isFile()) {
+            throw new Exception("Error: Path is not a file: " + path);
+        }
+        if (!file.canRead()) {
+            throw new Exception("Error: Cannot read file (check permissions): " + path);
+        }
+        // Check file size
+        long fileSize = file.length();
+        if (fileSize <= 0) {
+            throw new Exception("Error: File is empty: " + path);
+        }
+    }
+    
+    private RequestHandler createRequestHandler(String requestType) {
+        if (requestType.equalsIgnoreCase("Upload")) {
+            return new UploadHandler(socket);
+        } else if (requestType.equalsIgnoreCase("Get")) {
+            return new DownloadHandler(socket);
+        }
+        return null;
     }
 }
