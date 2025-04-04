@@ -7,18 +7,23 @@ import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
-        String serverIP = "localhost";
+        String serverIP = "192.168.110.182";
         int serverPort = 8080;
         int maxRetries = 3; 
         int retryDelay = 2000; 
         
         Socket socket = null;
         int attempt = 0;
-        
+        PrintWriter printWriter = null;
+        DataOutputStream dataOutputStream=null;
+        BufferedOutputStream transfer=null;
         while (attempt < maxRetries) {
             try {
                 socket = new Socket(serverIP, serverPort);
                 System.out.println("Connected to server at " + serverIP + ":" + serverPort);
+                printWriter=new PrintWriter(socket.getOutputStream());
+                dataOutputStream=new DataOutputStream(socket.getOutputStream());
+                transfer=new BufferedOutputStream(socket.getOutputStream());
                 break; // Successful connection, exit loop
             } catch (ConnectException ce) {
                 // System.err.println("Attempt " + (attempt + 1) + ": Could not connect to server. Retrying...");
@@ -59,7 +64,7 @@ public class Client {
                 continue;
             }
             
-            Thread taskThread = new Thread(new TaskHandler(socket, cmd));
+            Thread taskThread = new Thread(new TaskHandler(socket, cmd, printWriter, dataOutputStream, transfer));
             threads.add(taskThread);
             taskThread.start();
         }
@@ -77,7 +82,7 @@ public class Client {
 
         // Send stop command to server
         try {
-            new TaskHandler(socket, "STOP").run();
+            new TaskHandler(socket, "STOP", printWriter, dataOutputStream, transfer).run();
         } catch (Exception e) {
             System.err.println("Error sending stop command to server: " + e.getMessage());
         }
