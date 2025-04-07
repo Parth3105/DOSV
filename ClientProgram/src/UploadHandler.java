@@ -56,15 +56,16 @@ class UploadHandler implements RequestHandler {
 
             // Send the file in byte-stream
             fileReader = new FileInputStream(file);
-            byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
             int bytesRead;
             long totalBytesSent = 0;
             int progressMarker = 0;
 
             // Make list of the chunks to maintain the sequence
             List<byte[]> chunks = new ArrayList<>();
-            while ((bytesRead = fileReader.read(chunk)) != -1) {
-                chunks.add(Arrays.copyOf(chunk, chunk.length));
+            while (true) {
+                byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
+                if((bytesRead = fileReader.read(chunk)) == -1) break;
+                chunks.add(chunk);
             }
             fileReader.close();
 
