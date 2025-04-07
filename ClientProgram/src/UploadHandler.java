@@ -1,6 +1,9 @@
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * TODO:
@@ -10,24 +13,22 @@ import java.net.SocketException;
  */
 
 class UploadHandler implements RequestHandler {
-    private String os;
-    private final int BUFFER_SIZE = 128 * 1024 * 1024;
-    private final PrintWriter printWriter;
+    private final String os;
+    private final long BUFFER_SIZE = 128 * 1024 * 1024;
     private final DataOutputStream dataOutputStream;
-    private final BufferedOutputStream transfer;
+    private final Socket socket;
 
 
-    UploadHandler(PrintWriter printWriter, DataOutputStream dataOutputStream, BufferedOutputStream transfer) {
+    UploadHandler(Socket socket, DataOutputStream dataOutputStream) {
         this.os = System.getProperty("os.name").toUpperCase();
-        this.printWriter=printWriter;
-        this.dataOutputStream=dataOutputStream;
-        this.transfer=transfer;
+        this.dataOutputStream = dataOutputStream;
+        this.socket=socket;
     }
 
     @Override
     public synchronized void sendRequest(String path) {
         FileInputStream fileReader = null;
-        
+
         try {
             String[] pathSplit;
             pathSplit = ((os.contains("WIN")) ? path.split("\\\\") : path.split("/"));
@@ -39,7 +40,7 @@ class UploadHandler implements RequestHandler {
             if (!file.exists()) {
                 throw new FileNotFoundException("File not found: " + path);
             }
-            
+
             if (!file.canRead()) {
                 throw new IOException("Cannot read file (check permissions): " + path);
             }
@@ -48,38 +49,27 @@ class UploadHandler implements RequestHandler {
             System.out.println("Preparing to upload: " + fileName + " (" + fileSize + " bytes)");
 
             // Send write-request and filename
-            printWriter.println("WRITE");
-            printWriter.flush();
-            printWriter.println(fileName);
-            printWriter.flush();
-
-            // Send file size
-            dataOutputStream.writeLong(fileSize);
+            dataOutputStream.writeUTF("WRITE");
+            dataOutputStream.flush();
+            dataOutputStream.writeUTF(fileName);
             dataOutputStream.flush();
 
             // Send the file in byte-stream
             fileReader = new FileInputStream(file);
-            byte[] chunk = new byte[BUFFER_SIZE];
+            byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
             int bytesRead;
-            long totalBytesSent = 0;
-            int progressMarker = 0;
 
-            // Write/upload the file to the socket
+            // Make list of the chunks to maintain the sequence
+            List<byte[]> chunks = new ArrayList<>();
             while ((bytesRead = fileReader.read(chunk)) != -1) {
-                transfer.write(chunk, 0, bytesRead);
-                transfer.flush();
-                totalBytesSent += bytesRead;
-                
-                // Show progress
-                int progress = (int)((totalBytesSent * 100) / fileSize);
-                if (progress >= progressMarker + 10) {
-                    progressMarker = progress;
-                    System.out.println("Upload progress: " + progress + "%");
-                }
+                chunks.add(Arrays.copyOf(chunk, chunk.length));
             }
-            fileReader.close();
 
-            System.out.println("Upload completed: " + fileName + " (" + totalBytesSent + "/" + fileSize + " bytes)");
+            ObjectOutputStream transfer=new ObjectOutputStream(socket.getOutputStream());
+            transfer.writeObject(chunks);
+
+            System.out.println("Upload completed: " + fileName + " (" + fileSize + " bytes)");
+            fileReader.close();
 
         } catch (FileNotFoundException e) {
             System.err.println("Error: File not found or cannot be accessed.");
@@ -92,5 +82,6 @@ class UploadHandler implements RequestHandler {
     }
 
     @Override
-    public synchronized void receiveResponse() {}
+    public synchronized void receiveResponse() {
+    }
 }

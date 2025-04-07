@@ -14,16 +14,12 @@ import java.net.SocketException;
 class TaskHandler implements Runnable {
     private final Socket socket;
     private String request;
-    private final PrintWriter printWriter;
     private final DataOutputStream dataOutputStream;
-    private final BufferedOutputStream transfer;
 
-    TaskHandler(Socket socket, String request, PrintWriter printWriter, DataOutputStream dataOutputStream, BufferedOutputStream transfer) {
+    TaskHandler(Socket socket, String request, DataOutputStream dataOutputStream) {
         this.request = request;
         this.socket = socket;
-        this.printWriter = printWriter;
         this.dataOutputStream = dataOutputStream;
-        this.transfer = transfer;
     }
 
     public void run() {
@@ -36,9 +32,7 @@ class TaskHandler implements Runnable {
 
             String requestType = parts[0];
             if (requestType.equalsIgnoreCase("STOP")) {
-                printWriter.close();
                 dataOutputStream.close();
-                transfer.close();
                 return;
             }
 
@@ -88,7 +82,7 @@ class TaskHandler implements Runnable {
 
     private RequestHandler createRequestHandler(String requestType) {
         if (requestType.equalsIgnoreCase("Upload")) {
-            return new UploadHandler(printWriter, dataOutputStream, transfer);
+            return new UploadHandler(socket, dataOutputStream);
         } else if (requestType.equalsIgnoreCase("Get")) {
 //            return new DownloadHandler(socket);
         }
