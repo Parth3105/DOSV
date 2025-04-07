@@ -7,14 +7,16 @@ import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
-        String serverIP = "localhost";
+        String serverIP = "192.168.110.182";
         int serverPort = 8080;
         int maxRetries = 3; 
         int retryDelay = 2000; 
         
         Socket socket = null;
         int attempt = 0;
+
         DataOutputStream dataOutputStream=null;
+
         while (attempt < maxRetries) {
             try {
                 socket = new Socket(serverIP, serverPort);
@@ -60,7 +62,9 @@ public class Client {
                 continue;
             }
             
+
             Thread taskThread = new Thread(new TaskHandler(socket, cmd, dataOutputStream));
+          
             threads.add(taskThread);
             taskThread.start();
         }

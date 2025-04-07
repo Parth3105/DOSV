@@ -53,7 +53,6 @@ public class UploadHandler implements Handler {
                 fileWriter.write(chunk);
                 fileWriter.flush();
             }
-
             fileWriter.close();
             System.out.println("File Received Successfully!!!!"); //debug
         } catch (IOException e) {
