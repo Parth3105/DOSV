@@ -64,6 +64,7 @@ class UploadHandler implements RequestHandler {
             while ((bytesRead = fileReader.read(chunk)) != -1) {
                 chunks.add(Arrays.copyOf(chunk, chunk.length));
             }
+            fileReader.close();
 
             ObjectOutputStream transfer=new ObjectOutputStream(socket.getOutputStream());
             transfer.writeObject(chunks);
