@@ -1,33 +1,48 @@
+<<<<<<< HEAD
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+=======
+import java.io.*;
+>>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
 import java.net.Socket;
+import java.util.List;
 
-public class UploadHandler implements Handler{
+public class UploadHandler implements Handler {
+    private final String os;
+    private final DataInputStream dataInputStream;
     private final Socket socket;
-    private String os;
 
-    UploadHandler(Socket socket){
+    UploadHandler(Socket socket, DataInputStream dataInputStream) {
+        this.os = System.getProperty("os.name").toUpperCase();
+        this.dataInputStream = dataInputStream;
         this.socket=socket;
-        this.os=System.getProperty("os.name").toUpperCase();
     }
-
 
     /**
      * There are two paths to this function either write the file first and delete after transferring.
      * or directly transfer chunk coming from the client to the storage node.
      * Most suitable is first because we want to divide chunks too among storage nodes.
+     *
      * @param fileName
      */
     @Override
+<<<<<<< HEAD
     public void receiveRequest(String fileName) {    
+=======
+    public void receiveRequest(String fileName) {
+>>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
         try {
             String path = null;
             if (os.contains("WIN")) {
                 path = "..\\testFolder\\" + fileName;
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 // Create directory if it doesn't exist
                 File dir = new File("..\\testFolder");
                 if (!dir.exists() && !dir.mkdirs()) {
@@ -36,13 +51,18 @@ public class UploadHandler implements Handler{
             } else {
                 // String homeDir = System.getProperty("user.home");
                 // downloadPath = homeDir + "/Downloads/" + fileName;
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 // // Create directory if it doesn't exist
                 // File downloadDir = new File(homeDir + "/Downloads");
                 // if (!downloadDir.exists() && !downloadDir.mkdirs()) {
                 //     throw new IOException("Failed to create download directory");
                 // }
             }
+<<<<<<< HEAD
 
             // Retrieve file size for error detection.
             DataInputStream dataInputStream=new DataInputStream(socket.getInputStream());
@@ -55,23 +75,25 @@ public class UploadHandler implements Handler{
             int bytesRead,totalBytes=0;
             while((bytesRead=reader.read(chunk))!=-1){
                 fileWriter.write(chunk,0,bytesRead);
+=======
+
+            // Retrieve file.
+            FileOutputStream fileWriter = new FileOutputStream(path); // write into file.
+            ObjectInputStream clientObj=new ObjectInputStream(socket.getInputStream());
+            List<byte[]> chunks= (List<byte[]>) clientObj.readObject();
+
+            // Write the file.
+            for(byte[] chunk: chunks){
+                fileWriter.write(chunk);
+>>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 fileWriter.flush();
-                totalBytes+=bytesRead;
             }
-
-            // If any chunk lost or any other problems while reading.
-            if(totalBytes!=fileSize){
-                // handle error
-                System.out.println("File not received properly because totalBytes="+totalBytes+" and fileSize="+fileSize);
-            }
-
-            dataInputStream.close();
             fileWriter.close();
-            reader.close();
-
             System.out.println("File Received Successfully!!!!"); //debug
         } catch (IOException e) {
             // handle error
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
