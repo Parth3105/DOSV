@@ -1,12 +1,9 @@
-<<<<<<< HEAD
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-=======
 import java.io.*;
->>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
 import java.net.Socket;
 import java.util.List;
 
@@ -29,20 +26,12 @@ public class UploadHandler implements Handler {
      * @param fileName
      */
     @Override
-<<<<<<< HEAD
-    public void receiveRequest(String fileName) {    
-=======
     public void receiveRequest(String fileName) {
->>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
         try {
             String path = null;
             if (os.contains("WIN")) {
                 path = "..\\testFolder\\" + fileName;
-<<<<<<< HEAD
-                
-=======
 
->>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 // Create directory if it doesn't exist
                 File dir = new File("..\\testFolder");
                 if (!dir.exists() && !dir.mkdirs()) {
@@ -51,22 +40,13 @@ public class UploadHandler implements Handler {
             } else {
                 // String homeDir = System.getProperty("user.home");
                 // downloadPath = homeDir + "/Downloads/" + fileName;
-<<<<<<< HEAD
-                
-=======
 
->>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 // // Create directory if it doesn't exist
                 // File downloadDir = new File(homeDir + "/Downloads");
                 // if (!downloadDir.exists() && !downloadDir.mkdirs()) {
                 //     throw new IOException("Failed to create download directory");
                 // }
             }
-<<<<<<< HEAD
-
-            // Retrieve file size for error detection.
-            DataInputStream dataInputStream=new DataInputStream(socket.getInputStream());
-            long fileSize=dataInputStream.readLong();
 
             // Retrieve file.
             BufferedInputStream reader=new BufferedInputStream(socket.getInputStream()); // read from socket
@@ -75,9 +55,6 @@ public class UploadHandler implements Handler {
             int bytesRead,totalBytes=0;
             while((bytesRead=reader.read(chunk))!=-1){
                 fileWriter.write(chunk,0,bytesRead);
-=======
-
-            // Retrieve file.
             FileOutputStream fileWriter = new FileOutputStream(path); // write into file.
             ObjectInputStream clientObj=new ObjectInputStream(socket.getInputStream());
             List<byte[]> chunks= (List<byte[]>) clientObj.readObject();
@@ -85,7 +62,6 @@ public class UploadHandler implements Handler {
             // Write the file.
             for(byte[] chunk: chunks){
                 fileWriter.write(chunk);
->>>>>>> a0d73a02656768ba183357493131fdd6e24f5687
                 fileWriter.flush();
             }
             fileWriter.close();
