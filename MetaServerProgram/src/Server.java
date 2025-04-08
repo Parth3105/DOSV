@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,9 +15,7 @@ import java.util.List;
 public class Server {
     public static void main(String[] args) {
         int ServerPort=8080;
-        int DatabasePort=9000;
         ServerSocket serverSocket;
-        String DatabaseIP = "127.0.0.1";
         try {
             serverSocket=new ServerSocket(ServerPort,20);
         } catch (IOException e) {
@@ -24,7 +24,7 @@ public class Server {
         }
         
         System.out.println("Server is running on port: "+ServerPort);
-        //ConnectToDatabase(DatabaseIP, DatabasePort);
+        ConnectToDatabase();
         List<Socket> clients=new ArrayList<>();
         while(true){
             try {
@@ -36,42 +36,19 @@ public class Server {
             }
         }
     }
-    public static void ConnectToDatabase(String DatabaseIP, int DatabasePort) {
+    public static void ConnectToDatabase() {
         // Implement database connection logic here
         // This is a placeholder for the actual database connection code
-        int maxRetries = 3; 
-        int retryDelay = 2000; 
-        Socket socket = null;
-        int attempt = 0;
+        String url = "jdbc:postgresql://dpg-cvo3m0ffte5s73bajlbg-a.singapore-postgres.render.com:5432/dosv_metaserver";
+        String user = "adi_25704";
+        String password = "3iBn7AmefwTTZbilb2mOk5PkmJ2caWQy";
+        try {
+            Class.forName("org.postgresql.Driver"); // Optional in modern Java, but safe
+            Connection conn = DriverManager.getConnection(url, user, password);
+            System.out.println("Connected!");
 
-        DataOutputStream dataOutputStream=null;
-
-        while (attempt < maxRetries) {
-            try {
-                socket = new Socket(DatabaseIP, DatabasePort);
-                System.out.println("Connected to server at " + DatabaseIP + ":" + DatabasePort);
-                dataOutputStream=new DataOutputStream(socket.getOutputStream());
-                break; // Successful connection, exit loop
-            } catch (ConnectException ce) {
-                // System.err.println("Attempt " + (attempt + 1) + ": Could not connect to server. Retrying...");
-            } catch (IOException e) {
-                // System.err.println("Attempt " + (attempt + 1) + ": Failed to establish connection. Retrying...");
-            }
-
-            attempt++;
-            if (attempt < maxRetries) {
-                try {
-                    // Wait before retrying
-                    Thread.sleep(retryDelay); 
-                } catch (InterruptedException ie) {
-                    System.err.println("Server Connection interrupted. Exiting.");
-                    System.exit(1);
-                }
-            } else {
-                System.err.println("Could not connect to Server! Server might be down.");
-                System.exit(1);
-            }
+        }catch(Exception e) {
+            e.printStackTrace();
         }
-        System.out.println("Connecting to database at " + DatabaseIP + ":" + DatabasePort);
     }
 }
