@@ -1,10 +1,9 @@
-import java.io.DataOutputStream;
+import distribution.ConsistentHashing;
+import taskhandle.TaskHandler;
+
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +14,13 @@ import java.util.List;
 public class Server {
     public static void main(String[] args) {
         int ServerPort=8080;
+
+        List<String> storageNodes=new ArrayList<>();
+        storageNodes.add("192.168.110.94:8090");
+        storageNodes.add("192.168.110.51:8090");
+        storageNodes.add("192.168.110.182:8090");
+        ConsistentHashing chunkDistributor=new ConsistentHashing(storageNodes);
+
         ServerSocket serverSocket;
         try {
             serverSocket=new ServerSocket(ServerPort,20);
@@ -24,31 +30,16 @@ public class Server {
         }
         
         System.out.println("Server is running on port: "+ServerPort);
-        ConnectToDatabase();
         List<Socket> clients=new ArrayList<>();
         while(true){
             try {
                 clients.add(serverSocket.accept());
-                new Thread(new TaskHandler(clients.getLast())).start();
+                new Thread(new TaskHandler(clients.getLast(), chunkDistributor)).start();
                 System.out.println("New client connected: "+clients.getLast().getInetAddress().getHostAddress()+":"+clients.getLast().getPort());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
     }
-    public static void ConnectToDatabase() {
-        // Implement database connection logic here
-        // This is a placeholder for the actual database connection code
-        String url = "jdbc:postgresql://dpg-cvo3m0ffte5s73bajlbg-a.singapore-postgres.render.com:5432/dosv_metaserver";
-        String user = "adi_25704";
-        String password = "3iBn7AmefwTTZbilb2mOk5PkmJ2caWQy";
-        try {
-            Class.forName("org.postgresql.Driver"); // Optional in modern Java, but safe
-            Connection conn = DriverManager.getConnection(url, user, password);
-            System.out.println("Connected!");
 
-        }catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

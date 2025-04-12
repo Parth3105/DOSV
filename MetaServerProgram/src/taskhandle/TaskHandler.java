@@ -1,3 +1,8 @@
+package taskhandle;
+
+import distribution.ConsistentHashing;
+import request.ClientRequest;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -8,10 +13,12 @@ import java.net.Socket;
 
 public class TaskHandler implements Runnable {
     private final Socket socket;
-    private DataInputStream dataInputStream;
+    private final DataInputStream dataInputStream;
+    private final ConsistentHashing chunkDistributor;
 
-    TaskHandler(Socket socket) {
+    public TaskHandler(Socket socket, ConsistentHashing chunkDistributor) {
         this.socket = socket;
+        this.chunkDistributor=chunkDistributor;
         try {
             dataInputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -30,7 +37,7 @@ public class TaskHandler implements Runnable {
             Handler handler = null;
             if (request.getRequestType().equalsIgnoreCase(ClientRequest.UPLOAD)) {
                 System.out.println("File is being transferred"); //debug.
-                handler = new UploadHandler(socket, dataInputStream);
+                handler = new UploadHandler(socket, dataInputStream, chunkDistributor);
             } else ;
 
             handler.receiveRequest(request.getFileName());
