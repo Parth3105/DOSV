@@ -1,18 +1,23 @@
+package taskhandle;
+
+import distribution.ConsistentHashing;
+
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class UploadHandler implements Handler {
     private final String os;
     private final DataInputStream dataInputStream;
     private final Socket socket;
+    private final ConsistentHashing chunkDistributor;
 
-    UploadHandler(Socket socket, DataInputStream dataInputStream) {
+    UploadHandler(Socket socket, DataInputStream dataInputStream, ConsistentHashing chunkDistributor) {
         this.os = System.getProperty("os.name").toUpperCase();
         this.dataInputStream = dataInputStream;
         this.socket=socket;
+        this.chunkDistributor=chunkDistributor;
     }
 
     /**
@@ -49,8 +54,8 @@ public class UploadHandler implements Handler {
             ObjectInputStream clientObj=new ObjectInputStream(socket.getInputStream());
             List<byte[]> chunks= (List<byte[]>) clientObj.readObject();
             System.out.println("File Received Successfully!!!!"); //debug
-            SendToSQLiteDB(chunks, fileName); // send to DB.
 
+            distributeChunks(chunks, fileName);
         } catch (IOException e) {
             // handle error
             throw new RuntimeException(e);
@@ -59,12 +64,60 @@ public class UploadHandler implements Handler {
         }
 
     }
-    public void SendToSQLiteDB(List<byte[]> chunks, String fileName) {
-        String serverIP = "192.168.110.94";
-        int serverPort = 8090;
-        int maxRetries = 3; 
-        int retryDelay = 2000; 
-        
+
+    public void distributeChunks(List<byte[]> chunks, String fileName){
+        //Saving of object in a file
+        String fileType = fileName.substring(fileName.lastIndexOf('.') + 1); // Extract file type
+        List<String> chunkNames = new ArrayList();
+        for (int i = 0; i < chunks.size(); i++) {
+            chunkNames.add(fileName+"_chunk_"+ i+"." + fileType); // create chunk names.
+        }
+
+        Map<String, List<String>> chunkNameDistribution=new HashMap<>();
+        Map<String, List<byte[]>> chunkDistribution=new HashMap<>();
+
+        for(int j=0;j<chunkNames.size();j++){
+            String chunkName=chunkNames.get(j);
+            byte[] chunk=chunks.get(j);
+
+            String[] nodes=chunkDistributor.getNodeForChunk(chunkName);
+            for(String node: nodes){
+                List<String> chunkNameList=chunkNameDistribution.getOrDefault(node, new ArrayList<>());
+                List<byte[]> chunkList=chunkDistribution.getOrDefault(node, new ArrayList<>());
+
+                chunkNameList.add(chunkName);
+                chunkList.add(chunk);
+
+                chunkNameDistribution.put(node,chunkNameList);
+                chunkDistribution.put(node, chunkList);
+            }
+        }
+
+        for(Map.Entry<String,List<String>> entry: chunkNameDistribution.entrySet()){
+            System.out.print(entry.getKey()+": [ ");
+            for(String name: entry.getValue()){
+                System.out.print(name+", ");
+            }
+            System.out.println("]");
+        }
+
+        Set<String> keySet=chunkNameDistribution.keySet();
+        for(String node: keySet){
+            String serverIP=node.split(":")[0];
+            int serverPort=Integer.valueOf(node.split(":")[1]);
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    sendToSQLiteDB(serverIP, serverPort, chunkDistribution.get(node), chunkNameDistribution.get(node));
+                }
+            }).start();
+        }
+    }
+    public void sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames) {
+        int maxRetries = 3;
+        int retryDelay = 2000;
+
         Socket socket = null;
         int attempt = 0;
 
@@ -85,7 +138,7 @@ public class UploadHandler implements Handler {
             if (attempt < maxRetries) {
                 try {
                     // Wait before retrying
-                    Thread.sleep(retryDelay); 
+                    Thread.sleep(retryDelay);
                 } catch (InterruptedException ie) {
                     System.err.println("Database Connection interrupted. Exiting.");
                     System.exit(1);
@@ -99,15 +152,10 @@ public class UploadHandler implements Handler {
             // Send write-request and filename
             dataOutputStream.writeUTF("STORE");
             dataOutputStream.flush();
-            //Saving of object in a file
-            String fileType = fileName.substring(fileName.lastIndexOf('.') + 1); // Extract file type
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            List<String> chunk_names = new ArrayList();
-            for (int i = 0; i < chunks.size(); i++) {
-                chunk_names.add(fileName+"_chunk_"+ i+"." + fileType); // create chunk names.
-            }
+
             System.out.println("Sending chunk names to DB"); //debug
-            out.writeObject(chunk_names); // write the names of the chunks to the file.
+            out.writeObject(chunkNames); // write the names of the chunks to the file.
             out.flush();
             // Method for serialization of object
             System.out.println("Sending chunks to DB"); //debug
@@ -115,7 +163,7 @@ public class UploadHandler implements Handler {
             out.flush();
             System.out.println("Chunks sent to DB"); //debug
             out.close();
-            
+
         } catch (IOException e) {
             System.err.println("Error while sending write request or filename: " + e.getMessage());
             e.printStackTrace();
@@ -123,7 +171,7 @@ public class UploadHandler implements Handler {
             System.err.println("DataOutputStream or fileName is null: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
     }
     @Override
     public void sendResponse() {
