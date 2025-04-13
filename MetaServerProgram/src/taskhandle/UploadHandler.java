@@ -17,14 +17,16 @@ import java.sql.Timestamp;
 public class UploadHandler implements Handler {
     private final String os;
     private final DataInputStream dataInputStream;
+    private final DataOutputStream dataOutputStream;
     private final Socket socket;
     private final ConsistentHashing chunkDistributor;
     private final MetaService metaService;
 
-    UploadHandler(Socket socket, DataInputStream dataInputStream, ConsistentHashing chunkDistributor, MetaService metaService) {
+    UploadHandler(Socket socket, DataInputStream dataInputStream, DataOutputStream dataOutputStream, ConsistentHashing chunkDistributor, MetaService metaService) {
         this.metaService = metaService;
         this.os = System.getProperty("os.name").toUpperCase();
         this.dataInputStream = dataInputStream;
+        this.dataOutputStream=dataOutputStream;
         this.socket=socket;
         this.chunkDistributor=chunkDistributor;
     }
@@ -37,7 +39,7 @@ public class UploadHandler implements Handler {
      * @param fileName
      */
     @Override
-    public void receiveRequest(String fileName) {
+    public void receive(String fileName) {
         try {
             String path = null;
             if (os.contains("WIN")) {
@@ -144,7 +146,7 @@ public class UploadHandler implements Handler {
             new Thread(() -> {
                 try {
                     int result = sendToSQLiteDB(serverIP, serverPort,
-                            chunkDistribution.get(node), chunkNameDistribution.get(node));
+                            chunkDistribution.get(node), chunkNameDistribution.get(node), version);
                     results.put(node, result);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -173,7 +175,7 @@ public class UploadHandler implements Handler {
             System.out.println("All chunks sent successfully.");
         }
 }
-    public int sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames) {
+    public int sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames, int version) {
         int maxRetries = 3;
         int retryDelay = 2000;
 
@@ -209,7 +211,7 @@ public class UploadHandler implements Handler {
         }
          try {
             // Send write-request and filename
-            dataOutputStream.writeUTF("STORE");
+            dataOutputStream.writeUTF("STORE:"+version);
             dataOutputStream.flush();
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 
@@ -233,10 +235,10 @@ public class UploadHandler implements Handler {
             e.printStackTrace();
             return -1; // Failure
         }
-
     }
+
     @Override
-    public void sendResponse() {
+    public void send() {
 
     }
 

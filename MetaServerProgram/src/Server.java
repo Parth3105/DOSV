@@ -43,10 +43,12 @@ public class Server {
         List<Socket> clients=new ArrayList<>();
         while(true){
             try {
-                clients.add(serverSocket.accept());
-                new Thread(new TaskHandler(clients.getLast(), chunkDistributor,metaService)).start();
-                System.out.println("New client connected: "+clients.getLast().getInetAddress().getHostAddress()+":"+clients.getLast().getPort());
-            } catch (IOException e) {
+                Thread.sleep(500);
+                Socket socket=serverSocket.accept();
+                clients.add(socket);
+                System.out.println("New client connected: "+socket.getInetAddress().getHostAddress()+":"+socket.getPort());
+                new Thread(new TaskHandler(socket, chunkDistributor,metaService, clients)).start();
+            } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }

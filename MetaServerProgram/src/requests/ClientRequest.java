@@ -1,4 +1,4 @@
-package request;
+package requests;
 
 public class ClientRequest {
     public static final String UPLOAD="WRITE";
