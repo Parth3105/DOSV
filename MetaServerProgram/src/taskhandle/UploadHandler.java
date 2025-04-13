@@ -65,20 +65,13 @@ public class UploadHandler implements Handler {
             System.out.println("File Received Successfully!!!!"); //debug
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             int version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
-            if(version == -1) {
-                version = 1;
-            } else {
-                boolean iscurrent = metaService.UpdateIscurrent(fileName, version, metaService.getConn(), false);
-                System.out.println(iscurrent ? "Inserted successfully" : "Insert failed");
-                version++;
-                
-            }
+            version = Math.max(version,0);
+            version++;
             System.out.println("Version: "+version); //debug
             FileVersionMeta meta = new FileVersionMeta(
                 fileName,
                 version,
-                timestamp,
-                true
+                timestamp
             );
             boolean result = metaService.addFileVersionMeta(meta);
             System.out.println(result ? "Inserted successfully" : "Insert failed");
@@ -122,13 +115,15 @@ public class UploadHandler implements Handler {
 
         for(Map.Entry<String,List<String>> entry: chunkNameDistribution.entrySet()){
             String node = entry.getKey();
-            List<String> chunksForNode = new ArrayList<>();
-            System.out.print(node+": [ ");
+            List<String> chunksForNode = entry.getValue();
+
+            /// debug
+            /* System.out.print(node+": [ ");
             for(String name: entry.getValue()){
-                chunksForNode.add(name);
                 System.out.print(name+", ");
             }
-            System.out.println("]");
+            System.out.println("]"); */
+
             FileVersionChunks fvc = new FileVersionChunks(
                 fileName,
                 version,
@@ -139,11 +134,10 @@ public class UploadHandler implements Handler {
             metaService.addFileVersionChunks(fvc, metaService.getConn());
         }
 
-        Set<String> keySet = chunkNameDistribution.keySet();
         ConcurrentHashMap<String, Integer> results = new ConcurrentHashMap<>();
-        CountDownLatch latch = new CountDownLatch(keySet.size());
+        CountDownLatch latch = new CountDownLatch(chunkNameDistribution.keySet().size());
 
-        for (String node : keySet) {
+        for (String node : chunkNameDistribution.keySet()) {
             String serverIP = node.split(":")[0];
             int serverPort = Integer.parseInt(node.split(":")[1]);
 
@@ -174,8 +168,6 @@ public class UploadHandler implements Handler {
             // You’ll need to track what you inserted and now delete them
             metaService.deleteFileVersionChunks(fileName, version,metaService.getConn());
             metaService.deleteFileVersionMeta(fileName, version, metaService.getConn());
-            boolean iscurrent = metaService.UpdateIscurrent(fileName, version-1, metaService.getConn(), true);
-            System.out.println(iscurrent ? "Iscuurrent changed successfully" : "Iscurrent failed");
             System.exit(1);
         } else {
             System.out.println("All chunks sent successfully.");

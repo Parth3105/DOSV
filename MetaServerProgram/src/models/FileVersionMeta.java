@@ -6,15 +6,13 @@ public class FileVersionMeta {
     private String filename;
     private int version;
     private Timestamp validFrom;
-    private boolean isCurrent;
 
     public FileVersionMeta() {}
 
-    public FileVersionMeta(String filename, int version, Timestamp validFrom, boolean isCurrent) {
+    public FileVersionMeta(String filename, int version, Timestamp validFrom) {
         this.filename = filename;
         this.version = version;
         this.validFrom = validFrom;
-        this.isCurrent = isCurrent;
     }
 
     public String getFilename() {
@@ -41,21 +39,12 @@ public class FileVersionMeta {
         this.validFrom = validFrom;
     }
 
-    public boolean isCurrent() {
-        return isCurrent;
-    }
-
-    public void setCurrent(boolean current) {
-        isCurrent = current;
-    }
-
     @Override
     public String toString() {
         return "FileVersionMeta{" +
                 "filename='" + filename + '\'' +
                 ", version=" + version +
                 ", validFrom=" + validFrom +
-                ", isCurrent=" + isCurrent +
                 '}';
     }
 }

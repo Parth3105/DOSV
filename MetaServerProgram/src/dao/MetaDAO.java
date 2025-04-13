@@ -23,7 +23,6 @@ public class MetaDAO {
             stmt.setString(1, meta.getFilename());
             stmt.setInt(2, meta.getVersion());
             stmt.setTimestamp(3, meta.getValidFrom());
-            stmt.setBoolean(4, meta.isCurrent());
 
             stmt.executeUpdate();
             return true;
@@ -49,7 +48,7 @@ public class MetaDAO {
                 Timestamp validFrom = rs.getTimestamp("valid_from");
                 boolean isCurrent = rs.getBoolean("is_current");
 
-                return new FileVersionMeta(filename, version, validFrom, isCurrent);
+                return new FileVersionMeta(filename, version, validFrom);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -93,26 +92,6 @@ public class MetaDAO {
             stmt.setString(3, chunksObj.getNode());
             Array chunkArray = conn.createArrayOf("TEXT", chunksObj.getChunks());
             stmt.setArray(4, chunkArray);
-
-            stmt.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    public boolean UpdateIscurrent(String filename, int version, Connection conn, boolean isCurrent) {
-        try (Statement setPathStmt = conn.createStatement()) {
-            // Set the search path
-            setPathStmt.execute("SET search_path TO dataversioned");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        String sql = "UPDATE FileVersionMeta SET is_current = ? WHERE filename = ? AND version = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setBoolean(1, isCurrent);
-            stmt.setString(2, filename);
-            stmt.setInt(3, version);
 
             stmt.executeUpdate();
             return true;

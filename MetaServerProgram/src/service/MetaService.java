@@ -37,10 +37,6 @@ public String toString() {
     public int fetchFileVersionMeta(String filename, Connection conn) {
         return metaDAO.fetchFileVersionMeta(filename, conn);
     }
-    public boolean UpdateIscurrent(String filename, int version, Connection conn, boolean iscurrent)
-    {
-        return metaDAO.UpdateIscurrent(filename, version, conn, iscurrent);
-    }
     public boolean addFileVersionChunks(FileVersionChunks chunksObj, Connection conn) {
         return metaDAO.addFileVersionChunks(chunksObj, conn);
     }
