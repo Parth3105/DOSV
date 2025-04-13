@@ -1,19 +1,28 @@
 package taskhandle;
 
 import distribution.ConsistentHashing;
+import models.FileVersionChunks;
+import models.FileVersionMeta;
 
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
+import dao.MetaDAO;
+import service.MetaService;
+import java.sql.Timestamp;
 public class UploadHandler implements Handler {
     private final String os;
     private final DataInputStream dataInputStream;
     private final Socket socket;
     private final ConsistentHashing chunkDistributor;
+    private final MetaService metaService;
 
-    UploadHandler(Socket socket, DataInputStream dataInputStream, ConsistentHashing chunkDistributor) {
+    UploadHandler(Socket socket, DataInputStream dataInputStream, ConsistentHashing chunkDistributor, MetaService metaService) {
+        this.metaService = metaService;
         this.os = System.getProperty("os.name").toUpperCase();
         this.dataInputStream = dataInputStream;
         this.socket=socket;
@@ -54,8 +63,19 @@ public class UploadHandler implements Handler {
             ObjectInputStream clientObj=new ObjectInputStream(socket.getInputStream());
             List<byte[]> chunks= (List<byte[]>) clientObj.readObject();
             System.out.println("File Received Successfully!!!!"); //debug
-
-            distributeChunks(chunks, fileName);
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            int version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
+            version = Math.max(version,0);
+            version++;
+            System.out.println("Version: "+version); //debug
+            FileVersionMeta meta = new FileVersionMeta(
+                fileName,
+                version,
+                timestamp
+            );
+            boolean result = metaService.addFileVersionMeta(meta);
+            System.out.println(result ? "Inserted successfully" : "Insert failed");
+            distributeChunks(chunks, fileName, version);
         } catch (IOException e) {
             // handle error
             throw new RuntimeException(e);
@@ -65,7 +85,7 @@ public class UploadHandler implements Handler {
 
     }
 
-    public void distributeChunks(List<byte[]> chunks, String fileName){
+    public void distributeChunks(List<byte[]> chunks, String fileName, int version) {
         //Saving of object in a file
         String fileType = fileName.substring(fileName.lastIndexOf('.') + 1); // Extract file type
         List<String> chunkNames = new ArrayList();
@@ -94,27 +114,66 @@ public class UploadHandler implements Handler {
         }
 
         for(Map.Entry<String,List<String>> entry: chunkNameDistribution.entrySet()){
-            System.out.print(entry.getKey()+": [ ");
+            String node = entry.getKey();
+            List<String> chunksForNode = entry.getValue();
+
+            /// debug
+            /* System.out.print(node+": [ ");
             for(String name: entry.getValue()){
                 System.out.print(name+", ");
             }
-            System.out.println("]");
+            System.out.println("]"); */
+
+            FileVersionChunks fvc = new FileVersionChunks(
+                fileName,
+                version,
+                node,
+                chunksForNode.toArray(new String[0])
+            );
+
+            metaService.addFileVersionChunks(fvc, metaService.getConn());
         }
 
-        Set<String> keySet=chunkNameDistribution.keySet();
-        for(String node: keySet){
-            String serverIP=node.split(":")[0];
-            int serverPort=Integer.valueOf(node.split(":")[1]);
+        ConcurrentHashMap<String, Integer> results = new ConcurrentHashMap<>();
+        CountDownLatch latch = new CountDownLatch(chunkNameDistribution.keySet().size());
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    sendToSQLiteDB(serverIP, serverPort, chunkDistribution.get(node), chunkNameDistribution.get(node));
+        for (String node : chunkNameDistribution.keySet()) {
+            String serverIP = node.split(":")[0];
+            int serverPort = Integer.parseInt(node.split(":")[1]);
+
+            new Thread(() -> {
+                try {
+                    int result = sendToSQLiteDB(serverIP, serverPort,
+                            chunkDistribution.get(node), chunkNameDistribution.get(node));
+                    results.put(node, result);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    results.put(node, -1); // failure
+                } finally {
+                    latch.countDown(); // signal thread completion
                 }
             }).start();
         }
-    }
-    public void sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames) {
+
+        try {
+            latch.await(); // wait for all threads to finish
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        boolean rollbackNeeded = results.values().contains(-1);
+
+        if (rollbackNeeded) {
+            System.out.println("Failure detected. Rolling back MetaServer DB inserts...");
+            // You’ll need to track what you inserted and now delete them
+            metaService.deleteFileVersionChunks(fileName, version,metaService.getConn());
+            metaService.deleteFileVersionMeta(fileName, version, metaService.getConn());
+            System.exit(1);
+        } else {
+            System.out.println("All chunks sent successfully.");
+        }
+}
+    public int sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames) {
         int maxRetries = 3;
         int retryDelay = 2000;
 
@@ -141,11 +200,11 @@ public class UploadHandler implements Handler {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException ie) {
                     System.err.println("Database Connection interrupted. Exiting.");
-                    System.exit(1);
+                    return -1;
                 }
             } else {
                 System.err.println("Could not connect to Database! Database might be down.");
-                System.exit(1);
+                return -1;
             }
         }
          try {
@@ -163,13 +222,16 @@ public class UploadHandler implements Handler {
             out.flush();
             System.out.println("Chunks sent to DB"); //debug
             out.close();
+            return 1; // Success
 
         } catch (IOException e) {
             System.err.println("Error while sending write request or filename: " + e.getMessage());
             e.printStackTrace();
+            return -1; // Failure
         } catch (NullPointerException e) {
             System.err.println("DataOutputStream or fileName is null: " + e.getMessage());
             e.printStackTrace();
+            return -1; // Failure
         }
 
     }
