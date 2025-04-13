@@ -54,7 +54,7 @@ class TaskHandler implements Runnable {
             task.receiveResponse();
 
         } catch (SocketException se) {
-            System.err.println("Error: Connection to server lost.");
+            System.err.println("Error: Connection to server lost. Please restart.....");
             se.printStackTrace();
         } catch (Exception e) {
             System.err.println("Error executing task: " + e.getMessage());

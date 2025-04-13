@@ -26,10 +26,12 @@ public class TaskHandler implements Runnable {
 
     @Override
     public void run() {
-        String requestType = null;
+        String request = null;
         try {
-            requestType = dataInputStream.readUTF();
-            if(requestType.equalsIgnoreCase("STORE")) storeFileChunk();
+            request = dataInputStream.readUTF();
+            String requestType=request.split(":",2)[0];
+            int version=Integer.parseInt(request.split(":",2)[1]);
+            if(requestType.equalsIgnoreCase("STORE")) storeFileChunk(version);
             dataInputStream.close();
         } catch (IOException e) {
             // handle error
@@ -37,14 +39,14 @@ public class TaskHandler implements Runnable {
         }
     }
 
-    public void storeFileChunk(){
+    public void storeFileChunk(int version){
         try {
             ObjectInputStream objectInputStream=new ObjectInputStream(socket.getInputStream());
             List<String> chunkNames= (List<String>) objectInputStream.readObject();
             List<byte[]> chunks= (List<byte[]>) objectInputStream.readObject();
             System.out.println("File transfer successful...");
 
-            service.addObjects(chunkNames,chunks);
+            service.addObjects(chunkNames,chunks,version);
 
             /// test purpose
             service.readObjects(chunkNames);

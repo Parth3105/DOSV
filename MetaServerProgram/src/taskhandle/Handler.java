@@ -1,6 +1,6 @@
 package taskhandle;
 
 public interface Handler {
-    public void receiveRequest(String fileName);
-    public void sendResponse();
+    public void receive(String fileName);
+    public void send();
 }

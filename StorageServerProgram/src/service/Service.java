@@ -24,14 +24,14 @@ public class Service {
         this.conn = dbHandle.getConnection(url, username, password);
     }
 
-    public void addObject(String fileName, byte[] obj) {
+    public void addObject(String fileName, byte[] obj, int version) {
         DatabaseConnection dbConfig = new DatabaseConnection();
 
-        dao.addObject(conn, new ObjectStorage(fileName, obj));
+        dao.addObject(conn, new ObjectStorage(fileName, version, obj));
     }
 
-    public void addObjects(List<String> fileName, List<byte[]> obj) {
-        for(int j=0;j<fileName.size();j++) addObject(fileName.get(j),obj.get(j));
+    public void addObjects(List<String> fileName, List<byte[]> obj, int version) {
+        for(int j=0;j<fileName.size();j++) addObject(fileName.get(j),obj.get(j),version);
     }
 
     public void readObject(String fileName) {
