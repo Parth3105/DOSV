@@ -78,8 +78,9 @@ class UploadHandler implements RequestHandler {
         } catch (FileNotFoundException e) {
             System.err.println("Error: File not found or cannot be accessed.");
         } catch (SocketException se) {
-            System.err.println("Error: Connection to server lost during upload.");
-            se.printStackTrace();
+            System.err.println("Error: Connection to server lost during upload. Please restart....");
+            System.exit(-1);
+//            se.printStackTrace();
         } catch (IOException e) {
             System.err.println("Error: Failed to upload file.");
         }
@@ -87,5 +88,6 @@ class UploadHandler implements RequestHandler {
 
     @Override
     public synchronized void receiveResponse() {
+
     }
 }

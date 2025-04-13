@@ -21,10 +21,11 @@ public class ObjectDAO {
             throw new RuntimeException(e);
         }
         try {
-            String INSERT_QUERY = "INSERT INTO ObjectStorage(name,objChunk) VALUES (?,?)";
+            String INSERT_QUERY = "INSERT INTO ObjectStorage(name,version,objChunk) VALUES (?,?,?)";
             PreparedStatement ps = conn.prepareStatement(INSERT_QUERY);
             ps.setString(1, obj.getName());
-            ps.setBytes(2, obj.getObjChunk());
+            ps.setInt(2, obj.getVersion());
+            ps.setBytes(3, obj.getObjChunk());
 
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,13 +38,33 @@ public class ObjectDAO {
         ObjectStorage obj = null;
         PreparedStatement ps = null;
         try {
-            String FETCH_QUERY = "SELECT name, objChunk FROM ObjectStorage WHERE name=?";
+            String FETCH_QUERY = "SELECT name, version, objChunk FROM ObjectStorage WHERE name=?";
             ps = conn.prepareStatement(FETCH_QUERY);
             ps.setString(1, objName);
 
             ResultSet result = ps.executeQuery();
             while (result.next()) {
-                obj = new ObjectStorage(result.getString("name"), result.getBytes("objChunk"));
+                obj = new ObjectStorage(result.getString("name"), result.getInt("version"), result.getBytes("objChunk"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return obj;
+    }
+
+    public ObjectStorage fetchObjectByNameVersion(Connection conn, String objName, int objVersion) {
+        ObjectStorage obj = null;
+        PreparedStatement ps = null;
+        try {
+            String FETCH_QUERY = "SELECT name, version, objChunk FROM ObjectStorage WHERE name=? and version=?";
+            ps = conn.prepareStatement(FETCH_QUERY);
+            ps.setString(1, objName);
+            ps.setInt(2, objVersion);
+
+            ResultSet result = ps.executeQuery();
+            while (result.next()) {
+                obj = new ObjectStorage(result.getString("name"), result.getInt("version"), result.getBytes("objChunk"));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -58,9 +79,10 @@ public class ObjectDAO {
             String CREATE_TABLE = """
                     CREATE TABLE ObjectStorage(
                         name VARCHAR(256),
+                        version INTEGER,
                         objChunk Blob,
                         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY(name)
+                        PRIMARY KEY(name,version)
                     )
                     """;
             statement.executeUpdate(CREATE_TABLE);

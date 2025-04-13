@@ -1,13 +1,16 @@
 package taskhandle;
 
 import distribution.ConsistentHashing;
-import request.ClientRequest;
+import requests.ClientRequest;
 import service.MetaService;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.List;
 
 /**
+ * TODO:
  * Scope of Improvement:
  * Introduction to interrupt signals...(urgent messages)
  */
@@ -15,39 +18,57 @@ import java.net.Socket;
 public class TaskHandler implements Runnable {
     private final Socket socket;
     private final DataInputStream dataInputStream;
+    private final DataOutputStream dataOutputStream;
     private final ConsistentHashing chunkDistributor;
     private final MetaService metaService;
+    private final List<Socket> clients;
 
-    public TaskHandler(Socket socket, ConsistentHashing chunkDistributor, MetaService metaService) {
+    public TaskHandler(Socket socket, ConsistentHashing chunkDistributor, MetaService metaService, List<Socket> clients) {
         this.metaService = metaService;
         this.socket = socket;
-        this.chunkDistributor=chunkDistributor;
+        this.chunkDistributor = chunkDistributor;
         try {
             dataInputStream = new DataInputStream(socket.getInputStream());
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
+            // handle error
             throw new RuntimeException(e);
         }
+        this.clients = clients;
     }
 
     @Override
     public void run() {
         while (socket.isConnected()) {
             ClientRequest request = receiveRequest();
-            if (request.getRequestType() == null || request.getFileName() == null) {
+            if (request == null || request.getRequestType() == null || request.getFileName() == null) {
                 // handle error
-                return;
+                try {
+                    /// TODO: test this logic to close connection with idle client
+                    socket.close();
+                    clients.remove(socket);
+                    System.out.println("Remaining Client Connections: "+clients.size());
+                    ///
+                    return;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             Handler handler = null;
             if (request.getRequestType().equalsIgnoreCase(ClientRequest.UPLOAD)) {
                 System.out.println("File is being transferred"); //debug.
-                handler = new UploadHandler(socket, dataInputStream, chunkDistributor,metaService);
+                handler = new UploadHandler(socket, dataInputStream, dataOutputStream, chunkDistributor, metaService);
+            } else if (request.getRequestType().equalsIgnoreCase(ClientRequest.DOWNLOAD)) {
+                System.out.println("File is being received");//debug.
+                handler = new DownloadHandler(socket, dataOutputStream, dataInputStream, metaService);
             } else ;
 
-            handler.receiveRequest(request.getFileName());
+            handler.receive(request.getFileName());
         }
         // after handling all tasks.
         try {
             dataInputStream.close();
+            dataOutputStream.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -56,8 +77,16 @@ public class TaskHandler implements Runnable {
     private ClientRequest receiveRequest() {
         String requestType = null, fileName = null;
         try {
+            /// TODO: test this logic to close connection with idle client
+            int minute = 60 * 1000;
+            socket.setSoTimeout(minute/2);
             requestType = dataInputStream.readUTF();
             fileName = dataInputStream.readUTF();
+//            socket.setSoTimeout(0);
+            ///
+        } catch (SocketTimeoutException e) {
+            System.out.println("Closing connection with client: "+socket.getInetAddress().getHostAddress()+":"+socket.getPort());
+            return null;
         } catch (IOException e) {
             // handle error
             throw new RuntimeException(e);
