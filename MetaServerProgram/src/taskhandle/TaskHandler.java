@@ -2,6 +2,7 @@ package taskhandle;
 
 import distribution.ConsistentHashing;
 import request.ClientRequest;
+import service.MetaService;
 
 import java.io.*;
 import java.net.Socket;
@@ -15,8 +16,10 @@ public class TaskHandler implements Runnable {
     private final Socket socket;
     private final DataInputStream dataInputStream;
     private final ConsistentHashing chunkDistributor;
+    private final MetaService metaService;
 
-    public TaskHandler(Socket socket, ConsistentHashing chunkDistributor) {
+    public TaskHandler(Socket socket, ConsistentHashing chunkDistributor, MetaService metaService) {
+        this.metaService = metaService;
         this.socket = socket;
         this.chunkDistributor=chunkDistributor;
         try {
@@ -37,7 +40,7 @@ public class TaskHandler implements Runnable {
             Handler handler = null;
             if (request.getRequestType().equalsIgnoreCase(ClientRequest.UPLOAD)) {
                 System.out.println("File is being transferred"); //debug.
-                handler = new UploadHandler(socket, dataInputStream, chunkDistributor);
+                handler = new UploadHandler(socket, dataInputStream, chunkDistributor,metaService);
             } else ;
 
             handler.receiveRequest(request.getFileName());
