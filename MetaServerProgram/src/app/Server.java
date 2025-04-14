@@ -1,23 +1,45 @@
+package app;
+
 import config.DatabaseConnect;
-import java.io.DataOutputStream;
 import distribution.ConsistentHashing;
 import service.MetaService;
 import taskhandle.TaskHandler;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Statement;
 
 /**
  * Scope of improvement:
  * When to quit the connection with the client
  */
 public class Server {
+    static int port=8080;
+
+    public static void registerOrRelease(String req){
+        String loadBalancerIP = "127.0.0.1";
+        int loadBalancerPort = 8110;
+
+        try {
+            Socket socket=new Socket(loadBalancerIP,loadBalancerPort);
+            DataOutputStream dataOutputStream=new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.writeUTF(req);
+            dataOutputStream.flush();
+            dataOutputStream.writeInt(port);
+            dataOutputStream.flush();
+            dataOutputStream.close();
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String[] args) {
-        int ServerPort=8080;
+        registerOrRelease("REGISTER");
 
         List<String> storageNodes=new ArrayList<>();
         storageNodes.add("127.0.0.1:8090");
@@ -27,13 +49,13 @@ public class Server {
 
         ServerSocket serverSocket;
         try {
-            serverSocket=new ServerSocket(ServerPort,20);
+            serverSocket=new ServerSocket(port,20);
         } catch (IOException e) {
             // handle error
             throw new RuntimeException(e);
         }
         
-        System.out.println("Server is running on port: "+ServerPort);
+        System.out.println("Server is running on port: "+port);
         Connection conn = DatabaseConnect.ConnectToDatabase();
         if (conn == null) {
             System.err.println("Failed to connect to the database.");
