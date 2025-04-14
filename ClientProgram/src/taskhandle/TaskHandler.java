@@ -1,3 +1,5 @@
+package taskhandle;
+
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -11,12 +13,12 @@ import java.net.SocketException;
  * Introduction of TCP handoff is still left...
  */
 
-class TaskHandler implements Runnable {
+public class TaskHandler implements Runnable {
     private final Socket socket;
     private String request;
     private final DataOutputStream dataOutputStream;
 
-    TaskHandler(Socket socket, String request, DataOutputStream dataOutputStream) {
+    public TaskHandler(Socket socket, String request, DataOutputStream dataOutputStream) {
         this.request = request;
         this.socket = socket;
         this.dataOutputStream = dataOutputStream;
@@ -32,6 +34,7 @@ class TaskHandler implements Runnable {
 
             String requestType = parts[0];
             if (requestType.equalsIgnoreCase("STOP")) {
+                dataOutputStream.writeUTF("BYE");
                 dataOutputStream.close();
                 return;
             }
@@ -84,7 +87,7 @@ class TaskHandler implements Runnable {
         if (requestType.equalsIgnoreCase("Upload")) {
             return new UploadHandler(socket, dataOutputStream);
         } else if (requestType.equalsIgnoreCase("Get")) {
-//            return new DownloadHandler(socket);
+//            return new taskhandle.DownloadHandler(socket);
         }
         return null;
     }

@@ -1,0 +1,8 @@
+javac -d ./out -cp "./src/lib/postgresql-42.7.5.jar" ./src/app/*.java  ./src/config/*.java  ./src/dao/*.java  ./src/distribution/*.java  ./src/models/*.java  ./src/requests/*.java  ./src/service/*.java  ./src/taskhandle/*.java
+Note: src\taskhandle\UploadHandler.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+cd out
+
+java -cp "../src/lib/postgresql-42.7.5.jar;./" app.Server    #Windows
+java -cp "../src/lib/postgresql-42.7.5.jar:./" app.Server    #Linux
