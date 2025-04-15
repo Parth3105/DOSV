@@ -16,7 +16,7 @@ public class TaskHandler implements Runnable {
     private final DataInputStream dataInputStream;
     private final Service service;
 
-    TaskHandler(Socket socket, Service service) {
+    public TaskHandler(Socket socket, Service service) {
         this.socket = socket;
         try {
             this.dataInputStream = new DataInputStream(socket.getInputStream());
