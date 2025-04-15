@@ -8,6 +8,7 @@ import java.io.*;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Service {
@@ -31,7 +32,7 @@ public class Service {
     }
 
     public void addObjects(List<String> fileName, List<byte[]> obj, int version) {
-        for(int j=0;j<fileName.size();j++) addObject(fileName.get(j),obj.get(j),version);
+        for (int j = 0; j < fileName.size(); j++) addObject(fileName.get(j), obj.get(j), version);
     }
 
     public void readObject(String fileName) {
@@ -60,10 +61,21 @@ public class Service {
         }
     }
 
+    public List<byte[]> fetchChunksInList(List<String> chunkNames, int version) {
+        List<byte[]> chunks = new ArrayList<>();
+
+        for (String chunkName : chunkNames) {
+            ObjectStorage obj = dao.fetchObjectByNameVersion(conn, chunkName, version);
+            chunks.add(obj.getObjChunk());
+        }
+
+        return chunks;
+    }
+
     /// only for test purpose
     public void readObjects(List<String> chunkNames) {
-        if(chunkNames.isEmpty()) return;
-        String fileName= chunkNames.getFirst().split("_chunk",2)[0];
+        if (chunkNames.isEmpty()) return;
+        String fileName = chunkNames.getFirst().split("_chunk", 2)[0];
         String path;
         File dir;
         if (System.getProperty("os.name").toUpperCase().contains("WIN")) {
@@ -77,8 +89,8 @@ public class Service {
         if (!dir.exists() && !dir.mkdirs()) System.err.println("Failed to create directory");
         try {
             System.out.println("Reading....");
-            FileOutputStream writer = new FileOutputStream(path,true);
-            for(int j=0;j<chunkNames.size();j++) {
+            FileOutputStream writer = new FileOutputStream(path, true);
+            for (int j = 0; j < chunkNames.size(); j++) {
                 ObjectStorage obj = dao.fetchObjectByName(conn, chunkNames.get(j));
                 byte[] buffer = obj.getObjChunk();
                 writer.write(buffer);

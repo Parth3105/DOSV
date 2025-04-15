@@ -10,7 +10,7 @@ public class ObjectStorage {
 
     public ObjectStorage(String name, int version, byte[] objChunk) {
         this.name = name;
-        this.version=version;
+        this.version = version;
         this.objChunk = objChunk;
     }
 
