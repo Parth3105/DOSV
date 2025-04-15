@@ -7,7 +7,8 @@ public class FileVersionMeta {
     private int version;
     private Timestamp validFrom;
 
-    public FileVersionMeta() {}
+    public FileVersionMeta() {
+    }
 
     public FileVersionMeta(String filename, int version, Timestamp validFrom) {
         this.filename = filename;

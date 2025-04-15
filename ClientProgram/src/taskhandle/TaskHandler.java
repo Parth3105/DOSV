@@ -87,7 +87,7 @@ public class TaskHandler implements Runnable {
         if (requestType.equalsIgnoreCase("Upload")) {
             return new UploadHandler(socket, dataOutputStream);
         } else if (requestType.equalsIgnoreCase("Get")) {
-//            return new taskhandle.DownloadHandler(socket);
+            return new DownloadHandler(socket, dataOutputStream);
         }
         return null;
     }

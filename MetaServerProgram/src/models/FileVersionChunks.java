@@ -6,7 +6,8 @@ public class FileVersionChunks {
     private String node;
     private String[] chunks;
 
-    public FileVersionChunks() {}
+    public FileVersionChunks() {
+    }
 
     public FileVersionChunks(String filename, int version, String node, String[] chunks) {
         this.filename = filename;

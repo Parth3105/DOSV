@@ -11,9 +11,9 @@ import java.util.Scanner;
 
 public class Client {
 
-    private Socket getSocket(String serverAddress){
-        String serverIP = serverAddress.split(":",2)[0];
-        int serverPort = Integer.parseInt(serverAddress.split(":",2)[1]);
+    private Socket getSocket(String serverAddress) {
+        String serverIP = serverAddress.split(":", 2)[0];
+        int serverPort = Integer.parseInt(serverAddress.split(":", 2)[1]);
         int maxRetries = 3;
         int retryDelay = 2000;
 
@@ -49,12 +49,12 @@ public class Client {
         return socket;
     }
 
-    private String getServerToConnect(){
+    private String getServerToConnect() {
         String loadBalancerIP = "localhost";
         int loadBalancerPort = 8100;
         int maxRetries = 3;
         int retryDelay = 2000;
-        String serverAddress=null;
+        String serverAddress = null;
 
         Socket socket = null;
         int attempt = 0;
@@ -86,8 +86,8 @@ public class Client {
         }
 
         try {
-            DataInputStream dataInputStream=new DataInputStream(socket.getInputStream());
-            serverAddress=dataInputStream.readUTF();
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            serverAddress = dataInputStream.readUTF();
             dataInputStream.close();
             socket.close();
         } catch (IOException e) {
@@ -97,7 +97,7 @@ public class Client {
         return serverAddress;
     }
 
-    void close(Socket socket, Scanner sc){
+    void close(Socket socket, Scanner sc) {
         // Close socket and scanner
         try {
             if (socket != null && !socket.isClosed()) {
@@ -109,6 +109,7 @@ public class Client {
             System.err.println("Error while closing connection: " + e.getMessage());
         }
     }
+
     private boolean isValidCommand(String cmd) {
         String[] parts = cmd.split(" ", 2);
         if (parts.length != 2) {
@@ -120,16 +121,16 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        Client client=new Client();
-        String serverAddress= client.getServerToConnect();
-        System.out.println("To Connect: "+serverAddress);
-        if(serverAddress==null){
+        Client client = new Client();
+        String serverAddress = client.getServerToConnect();
+        System.out.println("To Connect: " + serverAddress);
+        if (serverAddress == null) {
             System.err.println("Error: Can't connect to server...");
             System.exit(-1);
         }
 
-        Socket socket=client.getSocket(serverAddress);
-        DataOutputStream dataOutputStream= null;
+        Socket socket = client.getSocket(serverAddress);
+        DataOutputStream dataOutputStream = null;
         try {
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
@@ -150,7 +151,7 @@ public class Client {
             System.out.print("> ");
             String cmd = sc.nextLine();
             if (cmd.equalsIgnoreCase("quit") || cmd.equalsIgnoreCase("exit")) break;
-            
+
             // Validate command format
             if (!client.isValidCommand(cmd)) {
                 System.err.println("Invalid command format. Please use 'GET <file-name>' or 'UPLOAD <path-of-the-file>'");
@@ -158,7 +159,7 @@ public class Client {
             }
 
             Thread taskThread = new Thread(new TaskHandler(socket, cmd, dataOutputStream));
-          
+
             threads.add(taskThread);
             taskThread.start();
         }
@@ -181,6 +182,6 @@ public class Client {
             System.err.println("Error sending stop command to server: " + e.getMessage());
         }
 
-        client.close(socket,sc);
+        client.close(socket, sc);
     }
 }

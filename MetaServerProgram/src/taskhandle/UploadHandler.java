@@ -13,7 +13,9 @@ import java.util.concurrent.CountDownLatch;
 
 import dao.MetaDAO;
 import service.MetaService;
+
 import java.sql.Timestamp;
+
 public class UploadHandler implements Handler {
     private final String os;
     private final DataInputStream dataInputStream;
@@ -26,9 +28,9 @@ public class UploadHandler implements Handler {
         this.metaService = metaService;
         this.os = System.getProperty("os.name").toUpperCase();
         this.dataInputStream = dataInputStream;
-        this.dataOutputStream=dataOutputStream;
-        this.socket=socket;
-        this.chunkDistributor=chunkDistributor;
+        this.dataOutputStream = dataOutputStream;
+        this.socket = socket;
+        this.chunkDistributor = chunkDistributor;
     }
 
     /**
@@ -39,7 +41,7 @@ public class UploadHandler implements Handler {
      * @param fileName
      */
     @Override
-    public void receive(String fileName) {
+    public void receive(String fileName, int version) {
         try {
             String path = null;
             if (os.contains("WIN")) {
@@ -62,18 +64,18 @@ public class UploadHandler implements Handler {
             }
 
             // Retrieve file.
-            ObjectInputStream clientObj=new ObjectInputStream(socket.getInputStream());
-            List<byte[]> chunks= (List<byte[]>) clientObj.readObject();
+            ObjectInputStream clientObj = new ObjectInputStream(socket.getInputStream());
+            List<byte[]> chunks = (List<byte[]>) clientObj.readObject();
             System.out.println("File Received Successfully!!!!"); //debug
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            int version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
-            version = Math.max(version,0);
+            version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
+            version = Math.max(version, 0);
             version++;
-            System.out.println("Version: "+version); //debug
+            System.out.println("Version: " + version); //debug
             FileVersionMeta meta = new FileVersionMeta(
-                fileName,
-                version,
-                timestamp
+                    fileName,
+                    version,
+                    timestamp
             );
             boolean result = metaService.addFileVersionMeta(meta);
             System.out.println(result ? "Inserted successfully" : "Insert failed");
@@ -92,30 +94,30 @@ public class UploadHandler implements Handler {
         String fileType = fileName.substring(fileName.lastIndexOf('.') + 1); // Extract file type
         List<String> chunkNames = new ArrayList();
         for (int i = 0; i < chunks.size(); i++) {
-            chunkNames.add(fileName+"_chunk_"+ i+"." + fileType); // create chunk names.
+            chunkNames.add(fileName + "_chunk_" + i + "." + fileType); // create chunk names.
         }
 
-        Map<String, List<String>> chunkNameDistribution=new HashMap<>();
-        Map<String, List<byte[]>> chunkDistribution=new HashMap<>();
+        Map<String, List<String>> chunkNameDistribution = new HashMap<>();
+        Map<String, List<byte[]>> chunkDistribution = new HashMap<>();
 
-        for(int j=0;j<chunkNames.size();j++){
-            String chunkName=chunkNames.get(j);
-            byte[] chunk=chunks.get(j);
+        for (int j = 0; j < chunkNames.size(); j++) {
+            String chunkName = chunkNames.get(j);
+            byte[] chunk = chunks.get(j);
 
-            String[] nodes=chunkDistributor.getNodeForChunk(chunkName);
-            for(String node: nodes){
-                List<String> chunkNameList=chunkNameDistribution.getOrDefault(node, new ArrayList<>());
-                List<byte[]> chunkList=chunkDistribution.getOrDefault(node, new ArrayList<>());
+            String[] nodes = chunkDistributor.getNodeForChunk(chunkName);
+            for (String node : nodes) {
+                List<String> chunkNameList = chunkNameDistribution.getOrDefault(node, new ArrayList<>());
+                List<byte[]> chunkList = chunkDistribution.getOrDefault(node, new ArrayList<>());
 
                 chunkNameList.add(chunkName);
                 chunkList.add(chunk);
 
-                chunkNameDistribution.put(node,chunkNameList);
+                chunkNameDistribution.put(node, chunkNameList);
                 chunkDistribution.put(node, chunkList);
             }
         }
 
-        for(Map.Entry<String,List<String>> entry: chunkNameDistribution.entrySet()){
+        for (Map.Entry<String, List<String>> entry : chunkNameDistribution.entrySet()) {
             String node = entry.getKey();
             List<String> chunksForNode = entry.getValue();
 
@@ -127,10 +129,10 @@ public class UploadHandler implements Handler {
             System.out.println("]"); */
 
             FileVersionChunks fvc = new FileVersionChunks(
-                fileName,
-                version,
-                node,
-                chunksForNode.toArray(new String[0])
+                    fileName,
+                    version,
+                    node,
+                    chunksForNode.toArray(new String[0])
             );
 
             metaService.addFileVersionChunks(fvc, metaService.getConn());
@@ -168,13 +170,14 @@ public class UploadHandler implements Handler {
         if (rollbackNeeded) {
             System.out.println("Failure detected. Rolling back MetaServer DB inserts...");
             // You’ll need to track what you inserted and now delete them
-            metaService.deleteFileVersionChunks(fileName, version,metaService.getConn());
+            metaService.deleteFileVersionChunks(fileName, version, metaService.getConn());
             metaService.deleteFileVersionMeta(fileName, version, metaService.getConn());
             System.exit(1);
         } else {
             System.out.println("All chunks sent successfully.");
         }
-}
+    }
+
     public int sendToSQLiteDB(String serverIP, int serverPort, List<byte[]> chunks, List<String> chunkNames, int version) {
         int maxRetries = 3;
         int retryDelay = 2000;
@@ -182,12 +185,12 @@ public class UploadHandler implements Handler {
         Socket socket = null;
         int attempt = 0;
 
-        DataOutputStream dataOutputStream=null;
+        DataOutputStream dataOutputStream = null;
         while (attempt < maxRetries) {
             try {
                 socket = new Socket(serverIP, serverPort);
                 System.out.println("Connected to Database at " + serverIP + ":" + serverPort);
-                dataOutputStream=new DataOutputStream(socket.getOutputStream());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 break; // Successful connection, exit loop
             } catch (ConnectException ce) {
                 // System.err.println("Attempt " + (attempt + 1) + ": Could not connect to server. Retrying...");
@@ -209,9 +212,9 @@ public class UploadHandler implements Handler {
                 return -1;
             }
         }
-         try {
+        try {
             // Send write-request and filename
-            dataOutputStream.writeUTF("STORE:"+version);
+            dataOutputStream.writeUTF("STORE:" + version);
             dataOutputStream.flush();
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 
@@ -224,6 +227,7 @@ public class UploadHandler implements Handler {
             out.flush();
             System.out.println("Chunks sent to DB"); //debug
             out.close();
+            dataOutputStream.close();
             return 1; // Success
 
         } catch (IOException e) {
@@ -238,8 +242,8 @@ public class UploadHandler implements Handler {
     }
 
     @Override
-    public void send() {
-
+    public void send(List<String> chunkNames, List<byte[]> chunksToSend) {
+        // send acknowledgment to client
     }
 
 }

@@ -23,7 +23,7 @@ class UploadHandler implements RequestHandler {
     UploadHandler(Socket socket, DataOutputStream dataOutputStream) {
         this.os = System.getProperty("os.name").toUpperCase();
         this.dataOutputStream = dataOutputStream;
-        this.socket=socket;
+        this.socket = socket;
     }
 
     @Override
@@ -65,17 +65,15 @@ class UploadHandler implements RequestHandler {
             List<byte[]> chunks = new ArrayList<>();
             while (true) {
                 byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
-                if((bytesRead = fileReader.read(chunk)) == -1) break;
+                if ((bytesRead = fileReader.read(chunk)) == -1) break;
                 chunks.add(chunk);
             }
             fileReader.close();
 
-            ObjectOutputStream transfer=new ObjectOutputStream(socket.getOutputStream());
+            ObjectOutputStream transfer = new ObjectOutputStream(socket.getOutputStream());
             transfer.writeObject(chunks);
 
             System.out.println("Upload completed: " + fileName + " (" + fileSize + " bytes)");
-            fileReader.close();
-
         } catch (FileNotFoundException e) {
             System.err.println("Error: File not found or cannot be accessed.");
         } catch (SocketException se) {
