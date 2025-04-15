@@ -1,7 +1,11 @@
 package taskhandle;
 
 import java.io.*;
+import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * This class as name suggests handles the file download request of the client.
@@ -10,34 +14,34 @@ import java.net.SocketException;
  */
 
 class DownloadHandler implements RequestHandler {
-    private String os;
-    private String fileName;
-    private final int BUFFER_SIZE = 128 * 1024 * 1024;
-    private final PrintWriter printWriter;
-    private final DataInputStream dataInputStream;
-    private final BufferedInputStream reader;
+    private final String os;
+    private final DataOutputStream dataOutputStream;
+    private final Socket socket;
+    private String fileName = null;
 
-    DownloadHandler(PrintWriter printWriter, DataInputStream dataInputStream, BufferedInputStream reader) {
+
+    public DownloadHandler(Socket socket, DataOutputStream dataOutputStream) {
         this.os = System.getProperty("os.name").toUpperCase();
-        this.printWriter = printWriter;
-        this.dataInputStream = dataInputStream;
-        this.reader = reader;
+        this.dataOutputStream = dataOutputStream;
+        this.socket = socket;
     }
 
     @Override
     public synchronized void sendRequest(String fileName) {
-        this.fileName = fileName;
-        printWriter.println("READ");
-        printWriter.flush();
-        printWriter.println(fileName);
-        printWriter.flush();
-        System.out.println("Download request sent for: " + fileName);
+        try {
+            this.fileName = fileName;
+            dataOutputStream.writeUTF("DOWNLOAD");
+            dataOutputStream.flush();
+            dataOutputStream.writeUTF(fileName);
+            dataOutputStream.flush();
+            System.out.println("Download request sent for: " + fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void receiveResponse() {
-        DataInputStream dataInputStream = null;
-        BufferedInputStream reader = null;
         FileOutputStream fileWriter = null;
 
         try {
@@ -61,57 +65,24 @@ class DownloadHandler implements RequestHandler {
                 // }
             }
 
-            // Read the file size
-            long fileSize = dataInputStream.readLong();
-            System.out.println("Receiving file: " + fileName + " (" + fileSize + " bytes)");
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            List<String> chunkNames = (List<String>) in.readObject();
+            List<byte[]> chunks = (List<byte[]>) in.readObject();
+            in.close();
 
-            fileWriter = new FileOutputStream(downloadPath); // Write the file
-
-            byte[] chunk = new byte[BUFFER_SIZE];
-            int bytesRead;
-            long totalBytes = 0;
-            int progressMarker = 0;
-
-            // Read/Download the file from the socket
-            while ((bytesRead = reader.read(chunk)) != -1) {
-                fileWriter.write(chunk, 0, bytesRead);
-                fileWriter.flush();
-                totalBytes += bytesRead;
-
-                // Show progress
-                int progress = (int) ((totalBytes * 100) / fileSize);
-                if (progress >= progressMarker + 10) {
-                    progressMarker = progress;
-                    System.out.println("Download progress: " + progress + "%");
-                }
-
-                if (totalBytes >= fileSize) {
-                    break;
-                }
+            Map<String, byte[]> nameChunkMap = new TreeMap<>();
+            for (int j = 0; j < chunkNames.size(); j++) {
+                nameChunkMap.put(chunkNames.get(j), chunks.get(j));
             }
 
-            // Verify file integrity
-            if (totalBytes != fileSize) {
-                System.err.println("Warning: File not received completely.");
+            FileOutputStream writer = new FileOutputStream(downloadPath, true);
+            for (byte[] chunk : nameChunkMap.values()) {
+                writer.write(chunk);
+                writer.flush();
             }
-
-            // Display acknowledgement to client
-            System.out.println("Downloaded " + fileName + " successfully to " + downloadPath);
-
-        } catch (FileNotFoundException e) {
-            System.err.println("Error: Could not create file for download.");
-        } catch (SocketException se) {
-            System.err.println("Error: Connection to server lost during download.");
-        } catch (IOException e) {
-            System.err.println("Error: Failed to download file.");
-        } finally {
-            try {
-//                if (dataInputStream != null) dataInputStream.close();
-                if (fileWriter != null) fileWriter.close();
-//                if (reader != null) reader.close();
-            } catch (IOException e) {
-                System.err.println("Error closing resources: " + e.getMessage());
-            }
+            writer.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

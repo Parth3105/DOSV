@@ -6,9 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Array;
+
 import models.FileVersionChunks;
 import models.FileVersionMeta;
+
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MetaDAO {
     public boolean addFileVersionMeta(FileVersionMeta meta, Connection conn) {
@@ -18,7 +22,7 @@ public class MetaDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        String sql = "INSERT INTO FileVersionMeta (filename, version, valid_from, is_current) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO FileVersionMeta (filename, version, valid_from) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, meta.getFilename());
             stmt.setInt(2, meta.getVersion());
@@ -31,6 +35,7 @@ public class MetaDAO {
             return false;
         }
     }
+
     public FileVersionMeta fetchFileMeta(String filename, int version, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -46,7 +51,6 @@ public class MetaDAO {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 Timestamp validFrom = rs.getTimestamp("valid_from");
-                boolean isCurrent = rs.getBoolean("is_current");
 
                 return new FileVersionMeta(filename, version, validFrom);
             }
@@ -55,6 +59,7 @@ public class MetaDAO {
         }
         return null;
     }
+
     public int fetchFileVersionMeta(String filename, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -63,11 +68,11 @@ public class MetaDAO {
             e.printStackTrace();
             return -1;
         }
-    
+
         String sql = "SELECT max(version) FROM FileVersionMeta WHERE filename = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, filename);
-    
+
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt(1); // getInt(1) for the first column
@@ -77,7 +82,7 @@ public class MetaDAO {
         }
         return -1;
     }
-    
+
     public boolean addFileVersionChunks(FileVersionChunks chunksObj, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -100,6 +105,7 @@ public class MetaDAO {
             return false;
         }
     }
+
     public boolean UpdateValidFrom(String filename, int version, Timestamp validFrom, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -120,24 +126,27 @@ public class MetaDAO {
             return false;
         }
     }
-    public FileVersionChunks fetchFileVersionChunks(String filename, int version, String node, Connection conn) {
-        String sql = "SET search_path TO dataversioned;SELECT * FROM FileVersionChunks WHERE filename = ? AND version = ? AND node_no = ?";
+
+    public List<FileVersionChunks> fetchAllChunkData(String filename, int version, Connection conn) {
+        List<FileVersionChunks> chunkData = new ArrayList<>();
+        String sql = "SET search_path TO dataversioned;SELECT * FROM FileVersionChunks WHERE filename = ? AND version = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, filename);
             stmt.setInt(2, version);
-            stmt.setString(3, node);
-    
+
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 Array chunksArray = rs.getArray("chunks");
                 String[] chunks = (String[]) chunksArray.getArray();
-                return new FileVersionChunks(filename, version, node, chunks);
+                String node = rs.getString("node");
+                chunkData.add(new FileVersionChunks(filename, version, node, chunks));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return chunkData;
     }
+
     public boolean deleteFileVersionChunks(String filename, int version, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -157,6 +166,7 @@ public class MetaDAO {
             return false;
         }
     }
+
     public boolean deleteFileVersionMeta(String filename, int version, Connection conn) {
         try (Statement setPathStmt = conn.createStatement()) {
             // Set the search path
@@ -175,7 +185,7 @@ public class MetaDAO {
             e.printStackTrace();
             return false;
         }
-    
+
 
     }
 }

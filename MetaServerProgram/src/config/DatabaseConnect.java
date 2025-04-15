@@ -1,4 +1,5 @@
 package config;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -14,7 +15,7 @@ public class DatabaseConnect {
             Connection conn = DriverManager.getConnection(url, user, password);
             System.out.println("Connected!");
             return conn;
-        }catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

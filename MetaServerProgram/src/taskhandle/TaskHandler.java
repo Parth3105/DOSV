@@ -48,7 +48,7 @@ public class TaskHandler implements Runnable {
                     /// TODO: test this logic to close connection with idle client
                     socket.close();
                     clients.remove(socket);
-                    System.out.println("Remaining Client Connections: "+clients.size());
+                    System.out.println("Remaining Client Connections: " + clients.size());
                     Server.registerOrRelease("RELEASE");
                     ///
                     return;
@@ -65,7 +65,7 @@ public class TaskHandler implements Runnable {
                 handler = new DownloadHandler(socket, dataOutputStream, dataInputStream, metaService);
             } else ;
 
-            handler.receive(request.getFileName());
+            handler.receive(request.getFileName(), request.getVersion());
         }
         // after handling all tasks.
         try {
@@ -81,16 +81,16 @@ public class TaskHandler implements Runnable {
         try {
             /// TODO: test this logic to close connection with idle client
             int minute = 60 * 1000;
-            socket.setSoTimeout(minute/2);
+            socket.setSoTimeout(minute / 2);
             requestType = dataInputStream.readUTF();
-            if(requestType.equalsIgnoreCase("BYE")){
+            if (requestType.equalsIgnoreCase("BYE")) {
                 return null;
             }
             fileName = dataInputStream.readUTF();
 //            socket.setSoTimeout(0);
             ///
         } catch (SocketTimeoutException e) {
-            System.out.println("Closing connection with client: "+socket.getInetAddress().getHostAddress()+":"+socket.getPort());
+            System.out.println("Closing connection with client: " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
             return null;
         } catch (IOException e) {
             // handle error

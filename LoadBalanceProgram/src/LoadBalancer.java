@@ -58,7 +58,7 @@ public class LoadBalancer {
     }
 
     void handleClientReq(int serverPort, LoadBalancer loadBalancer) {
-        ServerSocket serverSocket=null;
+        ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(serverPort, 100);
         } catch (Exception e) {
@@ -88,9 +88,9 @@ public class LoadBalancer {
     }
 
     void handleServerReq(int serverPort, LoadBalancer loadBalancer) {
-        ServerSocket serverSocket=null;
+        ServerSocket serverSocket = null;
         try {
-            serverSocket = new ServerSocket(serverPort, 100);
+            serverSocket = new ServerSocket(serverPort, 10);
         } catch (Exception e) {
             System.err.println("Error: Server isn't starting.....");
             return;
