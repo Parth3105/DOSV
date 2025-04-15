@@ -42,9 +42,11 @@ public class Server {
         registerOrRelease("REGISTER");
 
         List<String> storageNodes = new ArrayList<>();
-        // storageNodes.add("192.168.17.51:8090");
+      
+        storageNodes.add("192.168.17.51:8090");
         storageNodes.add("192.168.17.94:8090");
         storageNodes.add("192.168.17.182:8090");
+
         ConsistentHashing chunkDistributor = new ConsistentHashing(storageNodes);
 
         ServerSocket serverSocket;

@@ -37,8 +37,10 @@ public class DownloadHandler implements Handler {
             version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
             version = Math.max(version, 0);
         }
+      
         System.out.println("Version: " + version); // debug
         System.out.println("File Name: " + fileName); // debug
+
         Map<String, List<String>> chunkData = metaService.fetchAllChunkData(fileName, version);
         DownloadDistribution downloadDistribution = new DownloadDistribution();
         Map<String, List<String>> distribution = downloadDistribution.handleDistribution(chunkData);
@@ -65,6 +67,7 @@ public class DownloadHandler implements Handler {
             int serverPort = Integer.parseInt(serverAddress.split(":", 2)[1]);
 
             int finalVersion = version;
+
             Thread thread=new Thread(new Runnable() {
                 @Override
                 public void run() {
