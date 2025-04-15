@@ -37,6 +37,7 @@ public class DownloadHandler implements Handler {
             version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
             version = Math.max(version, 0);
         }
+      
         System.out.println("Version: " + version); // debug
         System.out.println("File Name: " + fileName); // debug
         Map<String, List<String>> chunkData = metaService.fetchAllChunkData(fileName, version);

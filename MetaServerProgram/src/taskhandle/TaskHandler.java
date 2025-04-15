@@ -64,7 +64,6 @@ public class TaskHandler implements Runnable {
                 System.out.println("File is being received");//debug.
                 handler = new DownloadHandler(socket, dataOutputStream, dataInputStream, metaService);
             } else ;
-            
             handler.receive(request.getFileName(), request.getVersion());
             
         }
