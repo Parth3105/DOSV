@@ -23,7 +23,7 @@ public class TaskHandler implements Runnable {
     private final ConsistentHashing chunkDistributor;
     private final MetaService metaService;
     private final List<Socket> clients;
-
+  
     public TaskHandler(Socket socket, ConsistentHashing chunkDistributor, MetaService metaService, List<Socket> clients) {
         this.metaService = metaService;
         this.socket = socket;
@@ -64,7 +64,7 @@ public class TaskHandler implements Runnable {
                 System.out.println("File is being received");//debug.
                 handler = new DownloadHandler(socket, dataOutputStream, dataInputStream, metaService);
             } else ;
-
+   
             handler.receive(request.getFileName(), request.getVersion());
         }
         // after handling all tasks.
@@ -81,12 +81,15 @@ public class TaskHandler implements Runnable {
         try {
             /// TODO: test this logic to close connection with idle client
             int minute = 60 * 1000;
-            socket.setSoTimeout(minute / 2);
+            socket.setSoTimeout(10* minute);
+          
             requestType = dataInputStream.readUTF();
             if (requestType.equalsIgnoreCase("BYE")) {
                 return null;
             }
             fileName = dataInputStream.readUTF();
+            System.out.println("Request Type: " + requestType); //debug
+            System.out.println("File Name: " + fileName); //debug
 //            socket.setSoTimeout(0);
             ///
         } catch (SocketTimeoutException e) {
