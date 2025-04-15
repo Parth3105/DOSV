@@ -64,8 +64,9 @@ public class TaskHandler implements Runnable {
                 System.out.println("File is being received");//debug.
                 handler = new DownloadHandler(socket, dataOutputStream, dataInputStream, metaService);
             } else ;
-
+            
             handler.receive(request.getFileName(), request.getVersion());
+            
         }
         // after handling all tasks.
         try {
@@ -81,12 +82,14 @@ public class TaskHandler implements Runnable {
         try {
             /// TODO: test this logic to close connection with idle client
             int minute = 60 * 1000;
-            socket.setSoTimeout(minute / 2);
+            socket.setSoTimeout(10* minute);
             requestType = dataInputStream.readUTF();
             if (requestType.equalsIgnoreCase("BYE")) {
                 return null;
             }
             fileName = dataInputStream.readUTF();
+            System.out.println("Request Type: " + requestType); //debug
+            System.out.println("File Name: " + fileName); //debug
 //            socket.setSoTimeout(0);
             ///
         } catch (SocketTimeoutException e) {
