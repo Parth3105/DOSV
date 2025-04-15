@@ -37,6 +37,10 @@ public class DownloadHandler implements Handler {
             version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
             version = Math.max(version, 0);
         }
+      
+        System.out.println("Version: " + version); // debug
+        System.out.println("File Name: " + fileName); // debug
+
         Map<String, List<String>> chunkData = metaService.fetchAllChunkData(fileName, version);
         DownloadDistribution downloadDistribution = new DownloadDistribution();
         Map<String, List<String>> distribution = downloadDistribution.handleDistribution(chunkData);
@@ -56,23 +60,39 @@ public class DownloadHandler implements Handler {
         List<byte[]> chunksToSend = new ArrayList<>();
         List<String> chunkNamesToSend = new ArrayList<>();
         Lock lock = new ReentrantLock();
+        List<Thread> threads = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : distribution.entrySet()) {
             String serverAddress = entry.getKey();
             String serverIP = serverAddress.split(":", 2)[0];
             int serverPort = Integer.parseInt(serverAddress.split(":", 2)[1]);
 
             int finalVersion = version;
-            new Thread(new Runnable() {
+
+            Thread thread=new Thread(new Runnable() {
                 @Override
                 public void run() {
                     lock.lock();
+                    System.out.println("Adding chunk names"); // debug
                     chunkNamesToSend.addAll(entry.getValue());
+                    System.out.println("Adding chunks"); // debug
                     chunksToSend.addAll(sendToSQLiteDB(serverIP, serverPort, entry.getValue(), finalVersion));
+                    System.out.println("Added chunks"); // debug
                     lock.unlock();
                 }
-            }).start();
+            });
+            threads.add(thread);
+            thread.start();
         }
-
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                System.err.println("Thread interrupted: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        System.out.println("All threads completed"); // debug
+        System.out.println(chunkNamesToSend.size() +':'+ chunksToSend.size()); // debug
         send(chunkNamesToSend, chunksToSend);
     }
 
@@ -119,13 +139,12 @@ public class DownloadHandler implements Handler {
             System.out.println("Sending chunk names to DB"); //debug
             out.writeObject(chunkNames); // write the names of the chunks to the file.
             out.flush();
-
+            System.out.println("chunk name sent");// debug
+            
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            System.out.println("Receiving chunks from DB"); //debug
             List<byte[]> chunks = (List<byte[]>) in.readObject();
-
-            in.close();
-            out.close();
-            dataOutputStream.close();
+            System.out.println("Chunks received from DB"); //debug
             return chunks;
 
         } catch (IOException e) {
