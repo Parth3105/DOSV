@@ -172,7 +172,7 @@ public class UploadHandler implements Handler {
             // You’ll need to track what you inserted and now delete them
             metaService.deleteFileVersionChunks(fileName, version, metaService.getConn());
             metaService.deleteFileVersionMeta(fileName, version, metaService.getConn());
-            System.exit(1);
+//            System.exit(1);
         } else {
             System.out.println("All chunks sent successfully.");
         }

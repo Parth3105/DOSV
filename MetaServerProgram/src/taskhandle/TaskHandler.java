@@ -81,7 +81,7 @@ public class TaskHandler implements Runnable {
         try {
             /// TODO: test this logic to close connection with idle client
             int minute = 60 * 1000;
-            socket.setSoTimeout(minute / 2);
+            socket.setSoTimeout(10*minute);
             requestType = dataInputStream.readUTF();
             if (requestType.equalsIgnoreCase("BYE")) {
                 return null;

@@ -30,7 +30,7 @@ class DownloadHandler implements RequestHandler {
     public synchronized void sendRequest(String fileName) {
         try {
             this.fileName = fileName;
-            dataOutputStream.writeUTF("DOWNLOAD");
+            dataOutputStream.writeUTF("READ");
             dataOutputStream.flush();
             dataOutputStream.writeUTF(fileName);
             dataOutputStream.flush();
@@ -54,6 +54,7 @@ class DownloadHandler implements RequestHandler {
                 if (!downloadDir.exists() && !downloadDir.mkdirs()) {
                     throw new IOException("Failed to create download directory");
                 }
+                System.out.println("Directory Created....");
             } else {
                 // String homeDir = System.getProperty("user.home");
                 // downloadPath = homeDir + "/Downloads/" + fileName;
@@ -65,22 +66,27 @@ class DownloadHandler implements RequestHandler {
                 // }
             }
 
+            System.out.println("Downloading file..."); //debug
+
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             List<String> chunkNames = (List<String>) in.readObject();
             List<byte[]> chunks = (List<byte[]>) in.readObject();
-            in.close();
+
+            System.out.println("received chunks successfully"); // debug
 
             Map<String, byte[]> nameChunkMap = new TreeMap<>();
             for (int j = 0; j < chunkNames.size(); j++) {
                 nameChunkMap.put(chunkNames.get(j), chunks.get(j));
             }
 
-            FileOutputStream writer = new FileOutputStream(downloadPath, true);
+            fileWriter=new FileOutputStream(downloadPath);
             for (byte[] chunk : nameChunkMap.values()) {
-                writer.write(chunk);
-                writer.flush();
+                fileWriter.write(chunk);
+                fileWriter.flush();
             }
-            writer.close();
+            fileWriter.close();
+
+            System.out.println("File Downloaded successfully...");
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

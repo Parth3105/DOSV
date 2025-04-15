@@ -129,10 +129,16 @@ public class MetaDAO {
 
     public List<FileVersionChunks> fetchAllChunkData(String filename, int version, Connection conn) {
         List<FileVersionChunks> chunkData = new ArrayList<>();
-        String sql = "SET search_path TO dataversioned;SELECT * FROM FileVersionChunks WHERE filename = ? AND version = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT * FROM FileVersionChunks WHERE filename = ? AND version = ?";
+        try {
+            Statement setPath=conn.createStatement();
+            setPath.executeUpdate("set search_path to dataversioned");
+
+            PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, filename);
             stmt.setInt(2, version);
+
+            System.out.println(stmt);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
