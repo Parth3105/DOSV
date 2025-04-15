@@ -27,6 +27,7 @@ bin/
 
 ### Intellij IDEA .iml ###
 .idea/
+*.iml
 
 ### Mac OS ###
 .DS_Store

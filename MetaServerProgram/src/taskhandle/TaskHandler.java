@@ -1,5 +1,6 @@
 package taskhandle;
 
+import app.Server;
 import distribution.ConsistentHashing;
 import requests.ClientRequest;
 import service.MetaService;
@@ -48,6 +49,7 @@ public class TaskHandler implements Runnable {
                     socket.close();
                     clients.remove(socket);
                     System.out.println("Remaining Client Connections: "+clients.size());
+                    Server.registerOrRelease("RELEASE");
                     ///
                     return;
                 } catch (IOException e) {
@@ -81,6 +83,9 @@ public class TaskHandler implements Runnable {
             int minute = 60 * 1000;
             socket.setSoTimeout(minute/2);
             requestType = dataInputStream.readUTF();
+            if(requestType.equalsIgnoreCase("BYE")){
+                return null;
+            }
             fileName = dataInputStream.readUTF();
 //            socket.setSoTimeout(0);
             ///
