@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -58,15 +59,14 @@ class UploadHandler implements RequestHandler {
             // Send the file in byte-stream
             fileReader = new FileInputStream(file);
             int bytesRead;
-            long totalBytesSent = 0;
-            int progressMarker = 0;
 
             // Make list of the chunks to maintain the sequence
             List<byte[]> chunks = new ArrayList<>();
+            byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
             while (true) {
-                byte[] chunk = new byte[(int) Math.min(BUFFER_SIZE, fileSize)];
                 if ((bytesRead = fileReader.read(chunk)) == -1) break;
-                chunks.add(chunk);
+                byte[] chunkToRead= Arrays.copyOf(chunk,bytesRead);
+                chunks.add(chunkToRead);
             }
             fileReader.close();
 

@@ -7,6 +7,7 @@ import taskhandle.TaskHandler;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
@@ -21,7 +22,7 @@ public class Server {
     static int port = 8080;
 
     public static void registerOrRelease(String req) {
-        String loadBalancerIP = "192.168.17.94";
+        String loadBalancerIP = "localhost";
         int loadBalancerPort = 8110;
 
         try {
@@ -33,7 +34,11 @@ public class Server {
             dataOutputStream.flush();
             dataOutputStream.close();
             socket.close();
-        } catch (IOException e) {
+        } catch(ConnectException ce){
+            System.out.println("Could not connect to load-balancer! Load-balancer might be down.");
+            System.exit(-1);
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -42,9 +47,9 @@ public class Server {
         registerOrRelease("REGISTER");
 
         List<String> storageNodes = new ArrayList<>();
-        // storageNodes.add("192.168.17.51:8090");
-        storageNodes.add("192.168.17.94:8090");
-        storageNodes.add("192.168.17.182:8090");
+        storageNodes.add("localhost:9090");
+        storageNodes.add("localhost:9100");
+        storageNodes.add("localhost:9110");
         ConsistentHashing chunkDistributor = new ConsistentHashing(storageNodes);
 
         ServerSocket serverSocket;

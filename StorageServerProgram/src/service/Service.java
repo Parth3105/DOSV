@@ -79,11 +79,11 @@ public class Service {
         String path;
         File dir;
         if (System.getProperty("os.name").toUpperCase().contains("WIN")) {
-            path = ".\\testFolder\\" + fileName;
-            dir = new File(".\\testFolder");
+            path = "..\\testFolder\\" + fileName;
+            dir = new File("..\\testFolder");
         } else {
-            path = "./testFolder/" + fileName;
-            dir = new File("./testFolder");
+            path = "../testFolder/" + fileName;
+            dir = new File("../testFolder");
         }
 
         if (!dir.exists() && !dir.mkdirs()) System.err.println("Failed to create directory");
