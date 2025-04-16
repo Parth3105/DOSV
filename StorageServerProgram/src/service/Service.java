@@ -33,6 +33,7 @@ public class Service {
 
     public void addObjects(List<String> fileName, List<byte[]> obj, int version) {
         for (int j = 0; j < fileName.size(); j++) addObject(fileName.get(j), obj.get(j), version);
+        System.out.println("File stored successfully!");
     }
 
     public void readObject(String fileName) {

@@ -9,7 +9,7 @@ public class DatabaseConnection {
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
-            System.out.println("Connected to the Database");
+            System.out.println("Connected to the SQLite");
         } catch (SQLException e) {
             // handle error
             throw new RuntimeException(e);
@@ -23,7 +23,7 @@ public class DatabaseConnection {
         try {
 
             conn = DriverManager.getConnection(url, username, password);
-            System.out.println("Connected to the Database");
+            System.out.println("Connected to the SQLite");
         } catch (SQLException e) {
             // handle error
             throw new RuntimeException(e);

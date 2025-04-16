@@ -13,7 +13,7 @@ public class DatabaseConnect {
         try {
             Class.forName("org.postgresql.Driver"); // Optional in modern Java, but safe
             Connection conn = DriverManager.getConnection(url, user, password);
-            System.out.println("Connected!");
+            System.out.println("Connected to PSQL!");
             return conn;
         } catch (Exception e) {
             e.printStackTrace();
