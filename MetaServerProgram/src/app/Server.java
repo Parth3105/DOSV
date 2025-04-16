@@ -24,6 +24,7 @@ public class Server {
     static String loadBalancerIP;
 
     public static void registerOrRelease(String req) {
+
         int loadBalancerPort = 8110;
 
         try {

@@ -46,6 +46,7 @@ class DownloadHandler implements RequestHandler {
         try {
             String downloadPath = null;
             if (os.contains("WIN")) {
+
                 downloadPath = "C:\\DOSV\\Downloads\\";
 
                 // Create directory if it doesn't exist
