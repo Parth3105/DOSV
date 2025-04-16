@@ -61,7 +61,6 @@ public class Server {
             storageNodes.add(sc.next()+":8090");
         }
         sc.close();
-
         ConsistentHashing chunkDistributor = new ConsistentHashing(storageNodes);
 
         ServerSocket serverSocket;
