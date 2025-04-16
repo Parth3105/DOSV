@@ -8,6 +8,19 @@ import java.util.Map;
 public class DownloadDistribution {
     public Map<String, List<String>> handleDistribution(Map<String, List<String>> chunkData) {
         Map<String, List<String>> distribution = new HashMap<>();
+
+        /// debug
+        /*System.out.println("CHUNK DATA --> {");
+        for(Map.Entry<String,List<String>> entry:chunkData.entrySet()){
+            System.out.print("\t"+entry.getKey()+": [ ");
+            for(String chunkName: entry.getValue()){
+                System.out.print(chunkName+" ");
+            }
+            System.out.println("]");
+        }
+        System.out.println("}");*/
+        ///
+
         for (Map.Entry<String, List<String>> entry : chunkData.entrySet()) {
             List<String> nodes = entry.getValue();
 

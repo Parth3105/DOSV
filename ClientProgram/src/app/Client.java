@@ -50,7 +50,7 @@ public class Client {
     }
 
     private String getServerToConnect() {
-        String loadBalancerIP = "192.168.17.94";
+        String loadBalancerIP = "localhost";
         int loadBalancerPort = 8100;
         int maxRetries = 3;
         int retryDelay = 2000;

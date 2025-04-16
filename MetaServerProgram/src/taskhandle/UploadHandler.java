@@ -228,14 +228,25 @@ public class UploadHandler implements Handler {
             System.out.println("Chunks sent to DB"); //debug
             out.close();
             dataOutputStream.close();
+            socket.close();
             return 1; // Success
 
         } catch (IOException e) {
             System.err.println("Error while sending write request or filename: " + e.getMessage());
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             e.printStackTrace();
             return -1; // Failure
         } catch (NullPointerException e) {
             System.err.println("DataOutputStream or fileName is null: " + e.getMessage());
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             e.printStackTrace();
             return -1; // Failure
         }

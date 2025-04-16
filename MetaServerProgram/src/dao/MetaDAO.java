@@ -142,7 +142,7 @@ public class MetaDAO {
             System.out.println("SQL: " + stmt.toString()); // debug
 
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
+            while (rs.next()) {
                 Array chunksArray = rs.getArray("chunks");
                 String[] chunks = (String[]) chunksArray.getArray();
                 String node = rs.getString("node");

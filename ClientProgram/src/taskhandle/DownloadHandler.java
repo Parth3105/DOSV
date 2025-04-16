@@ -2,7 +2,6 @@ package taskhandle;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -47,7 +46,7 @@ class DownloadHandler implements RequestHandler {
         try {
             String downloadPath = null;
             if (os.contains("WIN")) {
-                downloadPath = "D:\\DOSV\\Downloads\\" + fileName;
+                downloadPath = "D:\\DOSV\\Downloads\\";
 
                 // Create directory if it doesn't exist
                 File downloadDir = new File("D:\\DOSV\\Downloads");
@@ -79,9 +78,22 @@ class DownloadHandler implements RequestHandler {
                 nameChunkMap.put(chunkNames.get(j), chunks.get(j));
             }
 
-            fileWriter=new FileOutputStream(downloadPath);
-            for (byte[] chunk : nameChunkMap.values()) {
-                fileWriter.write(chunk);
+            String newFileName=new String(fileName);
+            if(new File(downloadPath+newFileName).exists()){
+                int num=1;
+                int fileFormatIndex=newFileName.lastIndexOf('.');
+                String filename=newFileName.substring(0,fileFormatIndex);
+                String fileFormat=newFileName.substring(fileFormatIndex);
+
+                while(new File(downloadPath+newFileName).exists()){
+                    newFileName=filename+ " (" + num++ + ")" + fileFormat;
+                }
+            }
+
+            fileWriter=new FileOutputStream(downloadPath+newFileName,true);
+            System.out.println("File: "+(downloadPath+newFileName)); //debug
+            for (Map.Entry<String,byte[]> entry : nameChunkMap.entrySet()) {
+                fileWriter.write(entry.getValue());
                 fileWriter.flush();
             }
             fileWriter.close();

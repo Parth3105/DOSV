@@ -65,13 +65,19 @@ public class MetaService {
 
         Map<String, List<String>> chunkNodeMap = new HashMap<>();
 
+        System.out.println("----------------------------------------------");
         for (FileVersionChunks fvc : chunkData) {
+            System.out.print(fvc.getNode()+" : [ "); //debug
             for (String chunkName : fvc.getChunks()) {
+                System.out.print(chunkName+" ");
                 List<String> nodes = chunkNodeMap.getOrDefault(chunkName, new ArrayList<>());
                 nodes.add(fvc.getNode());
-                chunkNodeMap.put(chunkName, nodes);
+                chunkNodeMap.put(chunkName, nodes); //debug
             }
+            System.out.println(); //debug
         }
+        System.out.println("----------------------------------------------");
+
 
         return chunkNodeMap;
     }
