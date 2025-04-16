@@ -87,7 +87,7 @@ public class TaskHandler implements Runnable {
                 return null;
             }
             fileName = dataInputStream.readUTF();
-            System.out.println("Request Type: " + requestType); //debug
+//            System.out.println("Request Type: " + requestType); //debug
             System.out.println("File Name: " + fileName); //debug
 //            socket.setSoTimeout(0);
             ///

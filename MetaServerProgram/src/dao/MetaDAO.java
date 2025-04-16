@@ -139,7 +139,8 @@ public class MetaDAO {
             stmt.setString(1, filename);
             stmt.setInt(2, version);
 
-            System.out.println("SQL: " + stmt.toString()); // debug
+
+//            System.out.println("SQL: " + stmt.toString()); // debug
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Array chunksArray = rs.getArray("chunks");

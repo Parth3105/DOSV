@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Scope of improvement:
@@ -20,9 +21,10 @@ import java.util.List;
  */
 public class Server {
     static int port = 8080;
+    static String loadBalancerIP;
 
     public static void registerOrRelease(String req) {
-        String loadBalancerIP = "localhost";
+
         int loadBalancerPort = 8110;
 
         try {
@@ -44,12 +46,21 @@ public class Server {
     }
 
     public static void main(String[] args) {
+        Scanner sc=new Scanner(System.in);
+        System.out.print("Enter IP-address of Load-Balancer: ");
+        String loadBalancerIP = sc.next();
+
         registerOrRelease("REGISTER");
 
         List<String> storageNodes = new ArrayList<>();
-        storageNodes.add("localhost:9090");
-        storageNodes.add("localhost:9100");
-        storageNodes.add("localhost:9110");
+        System.out.print("Enter the number of Storage-Nodes possessed: ");
+        int nodeCnt= sc.nextInt();
+
+        for(int j=0;j<nodeCnt;j++){
+            System.out.print("Enter the IP-address of Storage Node-"+(j+1)+": ");
+            storageNodes.add(sc.next()+":8090");
+        }
+        sc.close();
         ConsistentHashing chunkDistributor = new ConsistentHashing(storageNodes);
 
         ServerSocket serverSocket;

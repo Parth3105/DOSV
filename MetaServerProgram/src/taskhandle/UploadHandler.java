@@ -11,13 +11,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import dao.MetaDAO;
 import service.MetaService;
 
 import java.sql.Timestamp;
 
 public class UploadHandler implements Handler {
-    private final String os;
     private final DataInputStream dataInputStream;
     private final DataOutputStream dataOutputStream;
     private final Socket socket;
@@ -26,7 +24,6 @@ public class UploadHandler implements Handler {
 
     UploadHandler(Socket socket, DataInputStream dataInputStream, DataOutputStream dataOutputStream, ConsistentHashing chunkDistributor, MetaService metaService) {
         this.metaService = metaService;
-        this.os = System.getProperty("os.name").toUpperCase();
         this.dataInputStream = dataInputStream;
         this.dataOutputStream = dataOutputStream;
         this.socket = socket;
@@ -43,26 +40,6 @@ public class UploadHandler implements Handler {
     @Override
     public void receive(String fileName, int version) {
         try {
-            String path = null;
-            if (os.contains("WIN")) {
-                path = "..\\testFolder\\" + fileName;
-
-                // Create directory if it doesn't exist
-                File dir = new File("..\\testFolder");
-                if (!dir.exists() && !dir.mkdirs()) {
-                    throw new IOException("Failed to create download directory");
-                }
-            } else {
-                // String homeDir = System.getProperty("user.home");
-                // downloadPath = homeDir + "/Downloads/" + fileName;
-
-                // // Create directory if it doesn't exist
-                // File downloadDir = new File(homeDir + "/Downloads");
-                // if (!downloadDir.exists() && !downloadDir.mkdirs()) {
-                //     throw new IOException("Failed to create download directory");
-                // }
-            }
-
             // Retrieve file.
             ObjectInputStream clientObj = new ObjectInputStream(socket.getInputStream());
             List<byte[]> chunks = (List<byte[]>) clientObj.readObject();
@@ -71,14 +48,14 @@ public class UploadHandler implements Handler {
             version = metaService.fetchFileVersionMeta(fileName, metaService.getConn());
             version = Math.max(version, 0);
             version++;
-            System.out.println("Version: " + version); //debug
+//            System.out.println("Version: " + version); //debug
             FileVersionMeta meta = new FileVersionMeta(
                     fileName,
                     version,
                     timestamp
             );
             boolean result = metaService.addFileVersionMeta(meta);
-            System.out.println(result ? "Inserted successfully" : "Insert failed");
+            System.out.println(result ? "Inserted in PSQL successfully" : "Insertion in PSQL failed");
             distributeChunks(chunks, fileName, version);
         } catch (IOException e) {
             // handle error
@@ -189,7 +166,7 @@ public class UploadHandler implements Handler {
         while (attempt < maxRetries) {
             try {
                 socket = new Socket(serverIP, serverPort);
-                System.out.println("Connected to Database at " + serverIP + ":" + serverPort);
+                System.out.println("Connected to Storage-Node at " + serverIP + ":" + serverPort);
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 break; // Successful connection, exit loop
             } catch (ConnectException ce) {
@@ -218,14 +195,14 @@ public class UploadHandler implements Handler {
             dataOutputStream.flush();
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 
-            System.out.println("Sending chunk names to DB"); //debug
+//            System.out.println("Sending chunk names to DB"); //debug
             out.writeObject(chunkNames); // write the names of the chunks to the file.
             out.flush();
             // Method for serialization of object
-            System.out.println("Sending chunks to DB"); //debug
+//            System.out.println("Sending chunks to DB"); //debug
             out.writeObject(chunks);
             out.flush();
-            System.out.println("Chunks sent to DB"); //debug
+//            System.out.println("Chunks sent to DB"); //debug
             out.close();
             dataOutputStream.close();
             socket.close();
