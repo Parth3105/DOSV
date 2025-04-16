@@ -8,6 +8,7 @@ import java.util.*;
 public class ConsistentHashing {
 
     private final TreeMap<Long, String> ring;
+    private final int totalServers;
 
     public ConsistentHashing(List<String> servers) {
         ring = new TreeMap<>();
@@ -16,10 +17,12 @@ public class ConsistentHashing {
             long position = hash(server);
             ring.put(position, server);
         }
+        this.totalServers=servers.size();
     }
 
     public String[] getNodeForChunk(String chunkId) {
-        int replicationFactor = 2;
+        int replicationFactor = totalServers/2+1;
+//        int replicationFactor=1; // for localHost testing
         String[] nodes = new String[replicationFactor];
         long chunkHash = hash(chunkId);
 

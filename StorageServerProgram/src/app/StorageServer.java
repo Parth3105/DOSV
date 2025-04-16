@@ -39,7 +39,8 @@ import java.util.List;
  */
 public class StorageServer {
     public static void main(String[] args) {
-        int port = 8090;
+//        int port = 8090;
+        int port = Integer.parseInt(args[0]);
         ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(port, 20);
@@ -51,7 +52,8 @@ public class StorageServer {
 
         String path;
         File dir;
-        String DBName = "Objects.db";
+//        String DBName = "Objects.db";
+        String DBName = "Objects_"+port+".db";
         if (System.getProperty("os.name").toUpperCase().contains("WIN")) {
             path = ".\\DBFolder\\" + DBName;
             dir = new File(".\\DBFolder");

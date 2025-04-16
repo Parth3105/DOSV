@@ -2,7 +2,6 @@ package taskhandle;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,7 +29,7 @@ class DownloadHandler implements RequestHandler {
     public synchronized void sendRequest(String fileName) {
         try {
             this.fileName = fileName;
-            dataOutputStream.writeUTF("DOWNLOAD");
+            dataOutputStream.writeUTF("READ");
             dataOutputStream.flush();
             dataOutputStream.writeUTF(fileName);
             dataOutputStream.flush();
@@ -47,13 +46,14 @@ class DownloadHandler implements RequestHandler {
         try {
             String downloadPath = null;
             if (os.contains("WIN")) {
-                downloadPath = "D:\\DOSV\\Downloads\\" + fileName;
+                downloadPath = "D:\\DOSV\\Downloads\\";
 
                 // Create directory if it doesn't exist
                 File downloadDir = new File("D:\\DOSV\\Downloads");
                 if (!downloadDir.exists() && !downloadDir.mkdirs()) {
                     throw new IOException("Failed to create download directory");
                 }
+                System.out.println("Directory Created....");
             } else {
                 // String homeDir = System.getProperty("user.home");
                 // downloadPath = homeDir + "/Downloads/" + fileName;
@@ -65,22 +65,40 @@ class DownloadHandler implements RequestHandler {
                 // }
             }
 
+            System.out.println("Downloading file..."); //debug
+
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             List<String> chunkNames = (List<String>) in.readObject();
             List<byte[]> chunks = (List<byte[]>) in.readObject();
-            in.close();
+
+            System.out.println("received chunks successfully"); // debug
 
             Map<String, byte[]> nameChunkMap = new TreeMap<>();
             for (int j = 0; j < chunkNames.size(); j++) {
                 nameChunkMap.put(chunkNames.get(j), chunks.get(j));
             }
 
-            FileOutputStream writer = new FileOutputStream(downloadPath, true);
-            for (byte[] chunk : nameChunkMap.values()) {
-                writer.write(chunk);
-                writer.flush();
+            String newFileName=new String(fileName);
+            if(new File(downloadPath+newFileName).exists()){
+                int num=1;
+                int fileFormatIndex=newFileName.lastIndexOf('.');
+                String filename=newFileName.substring(0,fileFormatIndex);
+                String fileFormat=newFileName.substring(fileFormatIndex);
+
+                while(new File(downloadPath+newFileName).exists()){
+                    newFileName=filename+ " (" + num++ + ")" + fileFormat;
+                }
             }
-            writer.close();
+
+            fileWriter=new FileOutputStream(downloadPath+newFileName,true);
+            System.out.println("File: "+(downloadPath+newFileName)); //debug
+            for (Map.Entry<String,byte[]> entry : nameChunkMap.entrySet()) {
+                fileWriter.write(entry.getValue());
+                fileWriter.flush();
+            }
+            fileWriter.close();
+
+            System.out.println("File Downloaded successfully...");
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
