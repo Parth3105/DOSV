@@ -46,10 +46,10 @@ class DownloadHandler implements RequestHandler {
         try {
             String downloadPath = null;
             if (os.contains("WIN")) {
-                downloadPath = "D:\\DOSV\\Downloads\\";
+                downloadPath = "C:\\DOSV\\Downloads\\";
 
                 // Create directory if it doesn't exist
-                File downloadDir = new File("D:\\DOSV\\Downloads");
+                File downloadDir = new File("C:\\DOSV\\Downloads");
                 if (!downloadDir.exists() && !downloadDir.mkdirs()) {
                     throw new IOException("Failed to create download directory");
                 }

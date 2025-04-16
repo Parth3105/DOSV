@@ -48,12 +48,12 @@ public class TaskHandler implements Runnable {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             List<String> chunkNames = (List<String>) objectInputStream.readObject();
             List<byte[]> chunks = (List<byte[]>) objectInputStream.readObject();
-            System.out.println("File transfer successful...");
+            System.out.println("File received successfully!");
 
             service.addObjects(chunkNames, chunks, version);
 
             /// test purpose
-            service.readObjects(chunkNames);
+//            service.readObjects(chunkNames); //debug
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

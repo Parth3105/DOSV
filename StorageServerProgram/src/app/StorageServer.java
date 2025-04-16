@@ -1,28 +1,4 @@
 package app;
-/*import service.Service;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
-public class StorageServer {
-    public static void main(String[] args){
-
-        String fileName="IT559 LAB 8 Message Passing and Pub-Sub Model.pdf";
-        String filePath="C:\\Users\\parth\\Downloads\\"+fileName;
-        try {
-            FileInputStream fileInputStream=new FileInputStream(filePath);
-            byte[] buffer=fileInputStream.readAllBytes();
-
-            service.addObject(fileName,buffer);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        service.readObject(fileName);
-    }
-}*/
-
 import service.Service;
 import taskhandle.TaskHandler;
 
@@ -39,8 +15,8 @@ import java.util.List;
  */
 public class StorageServer {
     public static void main(String[] args) {
-//        int port = 8090;
-        int port = Integer.parseInt(args[0]);
+        int port = 8090;
+//        int port = Integer.parseInt(args[0]);
         ServerSocket serverSocket;
         try {
             serverSocket = new ServerSocket(port, 20);
@@ -52,8 +28,8 @@ public class StorageServer {
 
         String path;
         File dir;
-//        String DBName = "Objects.db";
-        String DBName = "Objects_"+port+".db";
+        String DBName = "Objects.db";
+//        String DBName = "Objects_"+port+".db";
         if (System.getProperty("os.name").toUpperCase().contains("WIN")) {
             path = ".\\DBFolder\\" + DBName;
             dir = new File(".\\DBFolder");
@@ -70,7 +46,7 @@ public class StorageServer {
         while (true) {
             try {
                 clients.add(serverSocket.accept());
-                System.out.println("New client connected: " + clients.getLast().getInetAddress().getHostAddress() + ":" + clients.getLast().getPort());
+                System.out.println("New Meta-server connected: " + clients.getLast().getInetAddress().getHostAddress() + ":" + clients.getLast().getPort());
                 new Thread(new TaskHandler(clients.getLast(), service)).start();
             } catch (IOException e) {
                 throw new RuntimeException(e);
